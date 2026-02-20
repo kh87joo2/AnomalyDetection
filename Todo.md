@@ -80,3 +80,22 @@
 2. DQVL report JSON is generated per input file.
 3. No split/window leakage violations.
 4. Real-data smoke tests pass.
+
+## 9) Progress Snapshot (2026-02-20 EOD)
+
+### Completed today
+1. Implemented readers, DQVL-lite, dataset source branching, and config extension.
+2. Added real-data smoke fixtures/tests (`tests/test_fdc_csv_smoke.py`, `tests/test_vib_csv_smoke.py`).
+3. Updated both Colab notebooks with:
+   - Kaggle download/prep cells.
+   - Data check cells.
+   - Training cells preferring `*_real.yaml`.
+4. Committed and pushed changes:
+   - `8ee3af8 feat(phase1.5): real-data pipeline + colab data flow [2026-02-20]`
+
+### Immediate next execution tasks (resume point)
+1. Execute `notebooks/colab_patchtst_ssl.ipynb` sequentially and confirm checkpoint creation.
+2. Execute `notebooks/colab_swinmae_ssl.ipynb` sequentially.
+3. In SwinMAE notebook, set `configs/swinmae_ssl_real.yaml:data.fs` from data check cell estimate before training.
+4. Confirm DQVL JSON outputs exist and inspect `decision`, `hard_fails`, `warnings`.
+5. Run inference scoring smoke for both streams with generated real-data checkpoints/configs.

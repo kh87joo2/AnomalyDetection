@@ -124,3 +124,49 @@
 - Added smoke-test documentation updates in `README.md` and `docs/runbook.md` with `pytest -q`.
 - Added a concise local sanity check sequence in `docs/runbook.md`: `python -m compileall core datasets models trainers inference` then `pytest -q`.
 - Smoke tests are now tracked as added; remaining next actions are Colab GPU training verification and scoring runs with generated checkpoints.
+
+## 9) Continuation update - 2026-02-20 (Phase 1.5 implementation + Colab flow)
+- Implemented real-data connection core:
+  - Added `datasets/contracts.md`.
+  - Added readers: `datasets/readers/fdc_reader.py`, `datasets/readers/vib_reader.py`.
+  - Added DQVL-lite: `dqvl/report.py`, `dqvl/fdc_rules.py`, `dqvl/vib_rules.py`.
+  - Updated dataset builders with `data.source` branching:
+    - `datasets/fdc_dataset.py` (`synthetic|csv|parquet`)
+    - `datasets/vib_dataset.py` (`synthetic|csv|npy`)
+  - Updated trainer config validation for source-dependent required keys:
+    - `trainers/train_patchtst_ssl.py`
+    - `trainers/train_swinmae_ssl.py`
+  - Extended configs with minimal real-data and dqvl keys:
+    - `configs/patchtst_ssl.yaml`
+    - `configs/swinmae_ssl.yaml`
+  - Added real-data smoke fixtures/tests:
+    - `tests/smoke/data/fdc_dummy.csv`
+    - `tests/smoke/data/vib_dummy.csv`
+    - `tests/test_fdc_csv_smoke.py`
+    - `tests/test_vib_csv_smoke.py`
+- Updated Colab notebooks for direct Kaggle workflow:
+  - `notebooks/colab_patchtst_ssl.ipynb`
+  - `notebooks/colab_swinmae_ssl.ipynb`
+  - Added Kaggle download/prep cells.
+  - Added data check cells (including SwinMAE `fs` estimate from timestamp).
+  - Training cells now use `*_real.yaml` first, with fallback to synthetic configs.
+- Commit and push status:
+  - Committed: `8ee3af8 feat(phase1.5): real-data pipeline + colab data flow [2026-02-20]`
+  - Push completed successfully after transient network reset.
+
+## 10) Restart checklist (next session)
+1. Run `notebooks/colab_patchtst_ssl.ipynb` top-to-bottom:
+   - bootstrap -> Kaggle download -> data check -> install -> GPU check -> train -> checkpoint check.
+2. Run `notebooks/colab_swinmae_ssl.ipynb` top-to-bottom:
+   - bootstrap -> Kaggle download -> data check.
+   - read `estimated_fs...` output from the check cell.
+   - update `configs/swinmae_ssl_real.yaml` `data.fs` to real sampling rate.
+   - continue install -> GPU check -> train -> checkpoint check.
+3. Verify DQVL reports were created:
+   - `artifacts/dqvl/fdc/*.json`
+   - `artifacts/dqvl/vib/*.json`
+4. Run scoring smoke for both streams with generated checkpoints:
+   - `python -m inference.run_scoring_example --stream patchtst --checkpoint checkpoints/patchtst_ssl.pt --config configs/patchtst_ssl_real.yaml`
+   - `python -m inference.run_scoring_example --stream swinmae --checkpoint checkpoints/swinmae_ssl.pt --config configs/swinmae_ssl_real.yaml`
+5. If Colab upload widget is disabled, run separate upload cell first:
+   - `from google.colab import files; files.upload()`
