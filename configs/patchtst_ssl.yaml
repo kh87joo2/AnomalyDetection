@@ -1,0 +1,37 @@
+seed: 42
+deterministic: false
+
+device:
+  prefer_cuda: true
+  amp: true
+
+logging:
+  log_dir: runs/patchtst_ssl
+  checkpoint_path: checkpoints/patchtst_ssl.pt
+
+data:
+  channels: 64
+  total_steps: 12000
+  train_ratio: 0.8
+  seq_len: 512
+  seq_stride: 256
+  normalization: robust  # robust | zscore
+
+model:
+  patch_len: 16
+  patch_stride: 16
+  mask_ratio: 0.4
+  d_model: 128
+  nhead: 4
+  num_layers: 3
+  ff_dim: 256
+  dropout: 0.1
+
+training:
+  epochs: 2
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0001
+  num_workers: 0
+  max_train_batches: 100
+  max_val_batches: 20
