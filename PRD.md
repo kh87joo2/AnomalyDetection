@@ -1,55 +1,85 @@
-# PRD (Product Requirements Doc) - Phase 1 (MVP Core Only)
+# PRD (Product Requirements Doc) - Phase 1.5 Real-Data Connection (Reduced Scope)
 
 ## 0) Decision Lock (Applied)
 
-- Code root is current repository folder.
-- Training objective is fixed to masked reconstruction for both streams.
-- Validation strategy is Google Colab with CUDA GPU; deployment target is local CUDA PC.
+- Keep training entry points unchanged:
+  - `python -m trainers.train_patchtst_ssl --config ...`
+  - `python -m trainers.train_swinmae_ssl --config ...`
+- Add real-data support only inside `build_fdc_datasets()` and `build_vibration_datasets()` via `data.source` branching.
+- Reader layer must be non-mutating (as-is load only): no auto sort, no interpolation, no imputation.
+- DQVL-lite is required for real-data path and must separate `hard_fail` and `warning`.
+- DQ decision is file-level only in Phase 1.5: `keep | drop`.
+- Leakage prevention is fixed: split by time first, then windowing; never create cross-file windows.
+- FS mismatch policy is fixed:
+  - `data.resample.enabled=false` -> mismatch is hard fail (drop)
+  - `data.resample.enabled=true` -> only configured deterministic resample is allowed
+- Backward compatibility is fixed: keep existing config keys used by current trainers/builders and add only minimal new keys.
 
 ## 1) Product Goal
 
-Build a skeleton framework that can independently train and validate two self-supervised anomaly modeling cores with minimal anomaly labels:
+Connect real FDC/vibration data to existing PatchTST-SSL and SwinMAE-SSL pipelines without changing trainer entry points, while preventing low-quality data from contaminating training.
 
-- PatchTST-SSL for multivariate FDC time series
-- SwinMAE-SSL for vibration (x, y, z) transformed into CWT scalograms
+## 2) In-Scope Features (Phase 1.5)
 
-The framework must run in Google Colab now (GPU optional) and be portable to a local CUDA GPU PC later without code redesign.
+### A) Data Contract
 
-## 2) In-Scope Features (Phase 1)
+- Add `datasets/contracts.md` with required columns, accepted formats, and minimal examples.
+- FDC contract: timestamp + multivariate process parameters.
+- Vibration contract: x/y/z + timestamp or sample index + fs metadata rule.
 
-### A. PatchTST-SSL (FDC / Time Stream)
+### B) Real-Data Readers
 
-- Input: continuous multivariate series `(T, C)` where `C` can be `50+`
-- Pipeline: sliding windows -> patching -> random masking -> masked reconstruction training
-- Normalization: train-only channel statistics (no leakage)
-- Output: trained checkpoint and optional reconstruction-error anomaly score hook
+- Add readers:
+  - `datasets/readers/fdc_reader.py`
+  - `datasets/readers/vib_reader.py`
+- Supported input for this phase:
+  - FDC: CSV/Parquet
+  - Vibration: CSV/NPY
 
-### B. SwinMAE-SSL (Vibration / Physics Stream)
+### C) DQVL-lite (Minimum)
 
-- Input: continuous vibration series `(T, 3)` at configurable `fs` (default 2000 Hz)
-- Windowing: default `2 sec` windows with configurable stride
-- Transform: Morlet CWT per axis -> stack as 3-channel image -> resize (default `224`)
-- Training: masked reconstruction with MSE (masked area focused)
-- Output: trained checkpoint and optional reconstruction-error anomaly score hook
+- Add DQVL modules:
+  - `dqvl/fdc_rules.py`
+  - `dqvl/vib_rules.py`
+  - `dqvl/report.py`
+- Required output: decision-focused JSON with `hard_fails`, `warnings`, and metrics.
 
-## 3) Out of Scope (Phase 1)
+### D) Existing Dataset Builder Integration
 
-- No-code UI, backend API, DB, dashboard/PDF, deployment stack
-- Full DQVL, fusion/threshold governance, XAI/correlation, LLM report generation
+- `datasets/fdc_dataset.py`: add `source=synthetic|csv|parquet` branch.
+- `datasets/vib_dataset.py`: add `source=synthetic|csv|npy` branch.
+- Preserve existing train/val flow and normalization policy (`fit on train only`).
+
+### E) Real-Data Smoke Validation
+
+- Add minimal smoke tests with dummy files:
+  - `tests/test_fdc_csv_smoke.py`
+  - `tests/test_vib_csv_smoke.py`
+- Verify one-batch forward + finite loss.
+
+## 3) Out of Scope (Phase 1.5)
+
+- New pipeline entry points (`pipelines/run_*.py`)
+- Full DQ score engine (weighted quality score optimization)
+- Automatic FS estimation-based resampling
+- Large-data optimization (chunking/memmap/distributed)
+- Dashboard/report UI
 
 ## 4) User Scenarios
 
-- In Colab, run 1-2 epochs on synthetic data to validate shape/forward/backward/save-load.
-- Replace synthetic dataset with real CSV data later without rewriting training loops.
-- Run the same training entry points on local CUDA workstation.
+- User sets `data.source=csv` and `data.path=...` and runs existing trainer command without code changes.
+- System drops clearly invalid files via DQVL hard-fail and records why.
+- System warns on recoverable quality issues while continuing if policy allows.
+- User can run synthetic and real-data modes from the same codebase.
 
 ## 5) Success Criteria
 
-- End-to-end execution works on Colab CPU and auto-uses CUDA when available.
-- Both pipelines complete data loading, preprocessing, training, checkpoint save/load.
-- Loss shows a decreasing trend on synthetic smoke tests.
-- Config-only changes support FDC channel count/window/mask ratio.
-- Config-only changes support vibration `fs`, window, CWT params, frequency range, and image size.
+- Existing synthetic path remains operational and unchanged in CLI usage.
+- Real-data path runs end-to-end for both streams with same trainer entry points.
+- DQVL report JSON is generated with required schema fields.
+- No train/val leakage from split/window order violations.
+- No windows are generated across file boundaries.
+- Smoke tests for CSV/NPY loaders pass with finite training loss.
 
 ## 6) References
 

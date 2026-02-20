@@ -1,118 +1,190 @@
-# TRD (Technical Requirements / Design Doc) - Phase 1
+# TRD (Technical Requirements / Design Doc) - Phase 1.5 Real-Data Connection
 
 ## 0) Decision Lock (Applied)
 
-- CWT backend is fixed to `pywt` in Phase 1.
-- Default normalization is `robust`; config keeps easy switch to `zscore`.
-- Tensor contracts are fixed as FDC `(B, T, C)` and vibration image `(B, 3, H, W)`.
-- Scoring contract is unified as `infer_score(batch, model, stream) -> (score, aux)`.
+- Keep existing trainer entry points unchanged.
+- Add real-data support only through dataset builders.
+- Reader must load data as-is (no auto-fix).
+- DQVL-lite must output hard-fail and warning separately.
+- DQ decision unit is file-level in this phase.
+- Split first, window later; no cross-file windows.
+- Existing config keys remain valid; add only minimal new keys.
 
-## 1) Tech Stack (Colab-Friendly)
-
-- Python 3.10+
-- PyTorch, torchvision
-- timm (Swin backbone)
-- numpy, pandas
-- pywt (PyWavelets) and/or scipy for CWT backend abstraction
-- einops, tqdm
-- tensorboard (or optional wandb)
-
-## 2) Recommended Repository Structure
+## 1) Target Repository Additions
 
 ```text
-anomaly_framework/
-  configs/
-    patchtst_ssl.yaml
-    swinmae_ssl.yaml
-  datasets/
-    fdc_dataset.py
-    vib_dataset.py
-    transforms/
-      cwt.py
-      normalization.py
-      windowing.py
-  models/
-    patchtst/
-      patchtst_ssl.py
-    swinmae/
-      swinmae_ssl.py
-  trainers/
-    train_patchtst_ssl.py
-    train_swinmae_ssl.py
-    utils.py
-  notebooks/
-    colab_patchtst_ssl.ipynb
-    colab_swinmae_ssl.ipynb
-  README.md
-  requirements.txt
+configs/
+  patchtst_ssl.yaml          # keep existing keys + minimal additions
+  swinmae_ssl.yaml           # keep existing keys + minimal additions
+
+datasets/
+  contracts.md
+  readers/
+    fdc_reader.py
+    vib_reader.py
+
+dqvl/
+  report.py
+  fdc_rules.py
+  vib_rules.py
+
+tests/
+  smoke/data/
+    fdc_dummy.csv
+    vib_dummy.csv
+  test_fdc_csv_smoke.py
+  test_vib_csv_smoke.py
 ```
 
-## 3) Cross-Cutting Design Principles
+## 2) Data Contracts
 
-- Config-first: all key parameters in YAML
-- Device auto-selection: CUDA if available, otherwise CPU
-- Reproducibility: seed + deterministic options
-- Train-only normalization statistics to prevent leakage
-- Streaming-friendly slicing via sliding windows on continuous series
+### A) FDC Contract
 
-## 4) PatchTST-SSL Design
+- Input: CSV/Parquet
+- Required fields:
+  - one timestamp column (configured)
+  - N process channels (`N >= 1`, typically large)
+- Target tensor contract into model path: `(B, T, C)`
 
-### Data Contract
+### B) Vibration Contract
 
-- Input: `float32` continuous series `(T, C)`, `C >= 50`
-- Window config: `seq_len` and `seq_stride`
+- Input: CSV/NPY
+- Required fields:
+  - x/y/z axes
+  - timestamp or sample index
+  - fs from config or metadata
+- Target model input contract: `(B, 3, H, W)` after window + CWT
 
-### Preprocessing
+## 3) Config Contract (Backward Compatible)
 
-- Channel-wise normalization (`mean/std` or robust `median/IQR`)
-- Persist scaler artifact for train/val/test consistency
+### Existing Keys
 
-### Model Skeleton
+- Keep all current keys used by trainers/builders unchanged.
+- Do not migrate existing keys to new nesting in this phase.
 
-- Patchify with configurable `patch_len` and stride
-- Random patch masking with configurable `mask_ratio`
-- Transformer encoder + lightweight reconstruction head
-- Loss: masked-patch MSE only
+### Minimal Added Keys
 
-### Outputs
+- Common:
+  - `data.source`: `synthetic|csv|parquet|npy` (stream-specific allowed values)
+  - `data.path`: input file path or glob
+- DQVL:
+  - `dqvl.enabled`: `true|false`
+  - `dqvl.allow_sort_fix`: `false|true` (default `false`)
+  - `dqvl.hard_fail.*`: threshold set
+  - `dqvl.warn.*`: threshold set
+- Vibration:
+  - `data.resample.enabled`: `false|true`
+  - `data.resample.method`: fixed deterministic method for this phase
 
-- Checkpoint at `checkpoints/patchtst_ssl.pt`
-- Optional scoring hook: aggregated reconstruction error
+## 4) Reader Behavior
 
-## 5) SwinMAE-SSL Design
+### A) FDC Reader (`datasets/readers/fdc_reader.py`)
 
-### Data Contract
+- Responsibilities:
+  - Load raw table from CSV/Parquet
+  - Select configured timestamp and channel columns
+  - Convert numeric channels to `float32`
+  - Return raw order data and metadata
+- Non-responsibilities:
+  - No sorting
+  - No dedup
+  - No fill/impute
+  - No outlier clipping
 
-- Input vibration stream: `(T, 3)` float32
-- Default sampling: `fs=2000`
-- Windowing by `win_sec` and `win_stride_sec`
+### B) Vibration Reader (`datasets/readers/vib_reader.py`)
 
-### CWT Pipeline
+- Responsibilities:
+  - Load CSV/NPY to `(T, 3)` float32 + metadata
+  - Read fs from config/metadata source by policy
+- Non-responsibilities:
+  - No implicit resample
+  - No implicit signal repair
 
-- Morlet CWT over configurable frequency range (`freq_min`, `freq_max`, `n_freqs`)
-- `abs` magnitude, optional `log1p`, normalization, resize
-- Build `(3, H, W)` image from x/y/z scalograms
+## 5) DQVL-lite Rules
 
-### Model Skeleton
+### A) FDC Hard Fail (drop)
 
-- Patch-level random masking on image input
-- Swin encoder (timm) + lightweight decoder
-- Loss: masked-region MSE
+- Missing required columns
+- Timestamp severe invalidity (non-monotonic or duplicate beyond threshold)
+- Global missing ratio above hard threshold
 
-### Outputs
+### B) FDC Warning (keep with warning)
 
-- Checkpoint at `checkpoints/swinmae_ssl.pt`
-- Optional scoring hook: masked MSE / pixel MSE
+- Missing ratio above warning threshold
+- Stuck/near-constant channel detected
+- Step-jump ratio above warning threshold
 
-## 6) Training Entry Points
+### C) Vibration Hard Fail (drop)
 
-```bash
-python -m trainers.train_patchtst_ssl --config configs/patchtst_ssl.yaml
-python -m trainers.train_swinmae_ssl --config configs/swinmae_ssl.yaml
-```
+- Missing required axes (`x,y,z`) or required metadata
+- NaN ratio above hard threshold
+- FS mismatch while `data.resample.enabled=false`
 
-## 7) Validation Requirements
+### D) Vibration Warning (keep with warning)
 
-- Colab CPU: smoke run completes end-to-end
-- Colab GPU: CUDA path runs without code changes
-- Synthetic data: both losses show downward trend in short runs
+- Clipping ratio above warning threshold
+- Flat-line ratio above warning threshold
+- FS mismatch with `data.resample.enabled=true` before configured resample
+
+## 6) DQVL Report Contract
+
+- Required JSON fields:
+  - `schema_version` (string)
+  - `run_id` (string/uuid)
+  - `file_id` (string)
+  - `decision` (`keep|drop|skipped`)
+  - `hard_fails` (list[str])
+  - `warnings` (list[str])
+  - `metrics` (object)
+- `dqvl.enabled=false` policy:
+  - `decision='skipped'` and record reason in report.
+
+## 7) Split and Leakage Policy
+
+- Split order is fixed:
+  - read -> dqvl -> split by time -> windowing
+- No windows may span across different files.
+- Default file policy:
+  - treat files independently for split/window generation
+  - no implicit cross-file concatenation
+
+## 8) FS Mismatch and Resampling Policy
+
+- If configured fs and observed fs mismatch:
+  - `resample.enabled=false` -> hard fail/drop
+  - `resample.enabled=true` -> resample by configured deterministic method only
+- No automatic fs estimation-based adaptive behavior in this phase.
+
+## 9) Dataset Builder Integration
+
+### A) PatchTST Path
+
+- `build_fdc_datasets(config)`:
+  - branch on `data.source`
+  - synthetic path unchanged
+  - real-data path: reader -> dqvl -> split -> scaler fit(train) -> transform -> window
+
+### B) SwinMAE Path
+
+- `build_vibration_datasets(config)`:
+  - branch on `data.source`
+  - synthetic path unchanged
+  - real-data path: reader -> dqvl -> split -> (optional configured resample) -> window -> CWT image
+
+## 10) Validation and Testing
+
+- Keep existing smoke tests for synthetic path.
+- Add real-data smoke tests:
+  - `test_fdc_csv_smoke.py`
+  - `test_vib_csv_smoke.py`
+- Each test validates:
+  - loader path works
+  - one batch forward works
+  - loss is finite
+
+## 11) Acceptance Criteria
+
+- Same trainer CLI commands work for synthetic and real-data modes.
+- DQVL report generated for real-data ingestion path.
+- No leakage from split/window policy violations.
+- Real-data smoke tests pass.
