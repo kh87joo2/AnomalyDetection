@@ -1,4 +1,9 @@
-# TRD (Technical Requirements / Design Doc) - Phase 1.5 Real-Data Connection
+# TRD (Technical Requirements / Design Doc) - Phase 1.5 Real-Data Connection [2026-02-20]
+
+## Document Scope Tags
+
+- Legacy baseline (Phase 1): before 2026-02-20
+- Current scope (Phase 1.5): 2026-02-20
 
 ## 0) Decision Lock (Applied)
 

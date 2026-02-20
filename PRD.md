@@ -1,4 +1,9 @@
-# PRD (Product Requirements Doc) - Phase 1.5 Real-Data Connection (Reduced Scope)
+# PRD (Product Requirements Doc) - Phase 1.5 Real-Data Connection (Reduced Scope) [2026-02-20]
+
+## Document Scope Tags
+
+- Legacy baseline (Phase 1): before 2026-02-20
+- Current scope (Phase 1.5): 2026-02-20
 
 ## 0) Decision Lock (Applied)
 

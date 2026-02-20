@@ -1,4 +1,9 @@
-# Todo (Phase 1.5 Execution Plan - Real-Data Connection)
+# Todo (Phase 1.5 Execution Plan - Real-Data Connection) [2026-02-20]
+
+## Document Scope Tags
+
+- Legacy baseline (Phase 1): before 2026-02-20
+- Current execution scope (Phase 1.5): 2026-02-20
 
 ## 0) Baseline Status (Completed)
 
