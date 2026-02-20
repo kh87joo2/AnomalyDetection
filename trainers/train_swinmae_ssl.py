@@ -79,29 +79,38 @@ def main() -> None:
     args = parse_args()
     config = load_yaml_config(args.config)
 
-    validate_required_keys(
-        config,
-        [
-            "seed",
-            "device.prefer_cuda",
-            "device.amp",
-            "data.fs",
-            "data.total_steps",
-            "data.win_sec",
-            "data.win_stride_sec",
-            "cwt.backend",
-            "cwt.freq_min",
-            "cwt.freq_max",
-            "cwt.n_freqs",
-            "image.size",
-            "model.mask_ratio",
-            "model.patch_size",
-            "training.epochs",
-            "training.batch_size",
-            "training.lr",
-            "logging.checkpoint_path",
-        ],
-    )
+    data_source = str(config.get("data", {}).get("source", "synthetic")).lower()
+    required_keys = [
+        "seed",
+        "device.prefer_cuda",
+        "device.amp",
+        "data.fs",
+        "data.train_ratio",
+        "data.win_sec",
+        "cwt.backend",
+        "cwt.freq_min",
+        "cwt.freq_max",
+        "cwt.n_freqs",
+        "image.size",
+        "model.mask_ratio",
+        "model.patch_size",
+        "training.epochs",
+        "training.batch_size",
+        "training.lr",
+        "logging.checkpoint_path",
+    ]
+    # Keep backward compatibility with existing key while allowing the alias.
+    if "win_stride_sec" in config.get("data", {}):
+        required_keys.append("data.win_stride_sec")
+    else:
+        required_keys.append("data.stride_sec")
+
+    if data_source == "synthetic":
+        required_keys.append("data.total_steps")
+    else:
+        required_keys.append("data.path")
+
+    validate_required_keys(config, required_keys)
 
     if str(config["cwt"].get("backend", "pywt")) != "pywt":
         raise ValueError("Phase 1 decision fixed backend to pywt")

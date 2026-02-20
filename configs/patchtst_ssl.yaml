@@ -10,12 +10,28 @@ logging:
   checkpoint_path: checkpoints/patchtst_ssl.pt
 
 data:
+  source: synthetic  # synthetic | csv | parquet
+  path: data/fdc/*.csv
+  timestamp_col: timestamp
   channels: 64
   total_steps: 12000
   train_ratio: 0.8
   seq_len: 512
   seq_stride: 256
   normalization: robust  # robust | zscore
+
+dqvl:
+  enabled: true
+  allow_sort_fix: false
+  report_dir: artifacts/dqvl/fdc
+  hard_fail:
+    require_timestamp: true
+    invalid_timestamp: true
+    max_missing_ratio: 0.5
+  warn:
+    missing_ratio: 0.05
+    stuck_std: 1.0e-8
+    jump_ratio: 0.2
 
 model:
   patch_len: 16

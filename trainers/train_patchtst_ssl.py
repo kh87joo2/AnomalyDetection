@@ -80,25 +80,27 @@ def main() -> None:
     args = parse_args()
     config = load_yaml_config(args.config)
 
-    validate_required_keys(
-        config,
-        [
-            "seed",
-            "device.prefer_cuda",
-            "device.amp",
-            "data.channels",
-            "data.total_steps",
-            "data.seq_len",
-            "data.seq_stride",
-            "model.patch_len",
-            "model.patch_stride",
-            "model.mask_ratio",
-            "training.epochs",
-            "training.batch_size",
-            "training.lr",
-            "logging.checkpoint_path",
-        ],
-    )
+    data_source = str(config.get("data", {}).get("source", "synthetic")).lower()
+    required_keys = [
+        "seed",
+        "device.prefer_cuda",
+        "device.amp",
+        "data.seq_len",
+        "data.seq_stride",
+        "data.train_ratio",
+        "model.patch_len",
+        "model.patch_stride",
+        "model.mask_ratio",
+        "training.epochs",
+        "training.batch_size",
+        "training.lr",
+        "logging.checkpoint_path",
+    ]
+    if data_source == "synthetic":
+        required_keys.extend(["data.channels", "data.total_steps"])
+    else:
+        required_keys.append("data.path")
+    validate_required_keys(config, required_keys)
 
     set_seed(int(config["seed"]), deterministic=bool(config.get("deterministic", False)))
     device = get_device(prefer_cuda=bool(config["device"]["prefer_cuda"]))

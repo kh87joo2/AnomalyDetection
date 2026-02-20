@@ -10,11 +10,35 @@ logging:
   checkpoint_path: checkpoints/swinmae_ssl.pt
 
 data:
+  source: synthetic  # synthetic | csv | npy
+  path: data/vib/*.csv
+  timestamp_col: timestamp
   fs: 2000
+  assume_actual_fs_equals_config: true
+  actual_fs: null
+  resample:
+    enabled: false
+    method: linear
   total_steps: 64000
   train_ratio: 0.8
   win_sec: 2.0
   win_stride_sec: 1.0
+
+dqvl:
+  enabled: true
+  allow_sort_fix: false
+  report_dir: artifacts/dqvl/vib
+  hard_fail:
+    max_missing_ratio: 0.5
+    fs_tol: 1.0e-6
+    missing_fs: false
+  warn:
+    missing_ratio: 0.05
+    clipping_ratio: 0.05
+    flat_eps: 1.0e-6
+    flat_ratio: 0.3
+    rms_min: 1.0e-6
+    rms_max: 1000000.0
 
 cwt:
   backend: pywt
