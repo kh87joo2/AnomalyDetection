@@ -4,6 +4,7 @@
 
 - Legacy baseline (Phase 1): before 2026-02-20
 - Current execution scope (Phase 1.5): 2026-02-20
+- Legacy file: `docs/archive/phase1_legacy/Todo_phase1.md`
 
 ## 0) Baseline Status (Completed)
 
