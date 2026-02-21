@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 import numpy as np
@@ -11,18 +12,23 @@ from dqvl.report import DQVLReport, build_report
 
 def _as_numeric_timestamps(timestamps: np.ndarray) -> tuple[np.ndarray, int]:
     series = pd.Series(timestamps)
-    dt = pd.to_datetime(series, errors="coerce")
-
-    if int(dt.notna().sum()) > 0:
-        invalid = int(dt.isna().sum())
-        arr = dt.astype("int64").to_numpy(dtype=np.float64)
-        if invalid > 0:
-            arr[dt.isna().to_numpy()] = np.nan
-        return arr, invalid
 
     num = pd.to_numeric(series, errors="coerce")
-    arr = num.to_numpy(dtype=np.float64)
-    invalid = int(np.isnan(arr).sum())
+    if int(num.notna().sum()) > 0:
+        arr = num.to_numpy(dtype=np.float64)
+        invalid = int(np.isnan(arr).sum())
+        return arr, invalid
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        dt_default = pd.to_datetime(series, errors="coerce")
+        dt_dayfirst = pd.to_datetime(series, errors="coerce", dayfirst=True)
+
+    dt = dt_dayfirst if int(dt_dayfirst.notna().sum()) > int(dt_default.notna().sum()) else dt_default
+    invalid = int(dt.isna().sum())
+    arr = dt.astype("int64").to_numpy(dtype=np.float64)
+    if invalid > 0:
+        arr[dt.isna().to_numpy()] = np.nan
     return arr, invalid
 
 

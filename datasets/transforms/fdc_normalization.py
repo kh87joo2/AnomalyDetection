@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from pathlib import Path
 from typing import Literal
 
@@ -29,17 +30,22 @@ class ChannelScaler:
         raise ValueError(f"Expected 2D or 3D input, got shape={x.shape}")
 
     def fit(self, x: np.ndarray) -> "ChannelScaler":
-        x2 = self._to_2d(x)
-        if self.method == "robust":
-            center = np.median(x2, axis=0)
-            q1 = np.percentile(x2, 25, axis=0)
-            q3 = np.percentile(x2, 75, axis=0)
-            scale = q3 - q1
-        else:
-            center = np.mean(x2, axis=0)
-            scale = np.std(x2, axis=0)
+        x2 = self._to_2d(x).astype(np.float32)
+        x2 = np.where(np.isfinite(x2), x2, np.nan)
 
-        scale = np.where(scale < self.eps, 1.0, scale)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            if self.method == "robust":
+                center = np.nanmedian(x2, axis=0)
+                q1 = np.nanpercentile(x2, 25, axis=0)
+                q3 = np.nanpercentile(x2, 75, axis=0)
+                scale = q3 - q1
+            else:
+                center = np.nanmean(x2, axis=0)
+                scale = np.nanstd(x2, axis=0)
+
+        center = np.where(np.isfinite(center), center, 0.0)
+        scale = np.where(np.isfinite(scale) & (np.abs(scale) >= self.eps), scale, 1.0)
         self.center_ = center.astype(np.float32)
         self.scale_ = scale.astype(np.float32)
         return self
@@ -47,7 +53,8 @@ class ChannelScaler:
     def transform(self, x: np.ndarray) -> np.ndarray:
         if self.center_ is None or self.scale_ is None:
             raise RuntimeError("Scaler is not fitted")
-        return ((x - self.center_) / self.scale_).astype(np.float32)
+        z = (x.astype(np.float32) - self.center_) / self.scale_
+        return np.nan_to_num(z, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
 
     def fit_transform(self, x: np.ndarray) -> np.ndarray:
         return self.fit(x).transform(x)

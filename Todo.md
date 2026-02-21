@@ -128,3 +128,30 @@
 ### Fallback path (if GPU quota still exhausted)
 1. Lower epochs and max batches for CPU smoke verification only.
 2. Defer full real-data training until GPU quota reset.
+
+## 11) Progress Snapshot (2026-02-21 Late Session)
+
+### Completed today (additional)
+1. Diagnosed PatchTST real-data loss explosion using runtime scale diagnostics:
+   - observed `abs_p99 ~= 31057`
+   - observed tiny robust scales (`min ~= 0.000128`, `tiny_scale_count(<0.05)=9`)
+2. Built stabilized PatchTST input file:
+   - `/content/AnomalyDetection/data/fdc/swat_fdc_train_clean_v2.csv`
+   - channel-preserving low-variance handling + outlier clipping
+3. Updated PatchTST real config for stable training:
+   - `data.path` -> `swat_fdc_train_clean_v2.csv`
+   - `training.lr = 1e-4`
+   - `device.amp = false`
+   - `training.epochs = 10`
+4. Completed PatchTST 10-epoch retraining with stable decreasing trend:
+   - Epoch 1: `train=8.029775`, `val=39.985680`
+   - Epoch 10: `train=4.214598`, `val=21.153209`
+5. Final artifacts confirmed and bundled:
+   - `/content/run_bundle_20260221_095519`
+   - contains: both checkpoints + both real configs
+
+### Next actions (Phase 2 kickoff)
+1. Add selectable normalization options in config/runtime (`minmax`, `zscore`, `robust`, `normalize`).
+2. Add robust-scaler floor (`min_scale`) to prevent low-variance division explosions without channel suppression.
+3. Define operating threshold workflow (normal-score percentile, then TPR/FPR reporting on held-out anomaly slices).
+4. Document final reproducible Colab run order (minimal cells only) in runbook.

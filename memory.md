@@ -205,3 +205,30 @@
 - Fallback if GPU remains unavailable:
   1. Run CPU-only smoke by reducing epochs/batches in real configs.
   2. Defer full training until GPU quota resets.
+
+## 13) Continuation update - 2026-02-21 (PatchTST stabilization + final artifact save)
+- PatchTST real-data training instability was reproduced and diagnosed:
+  - Symptom: extremely large losses (`train ~2.29e6`, `val ~3.44e4`) despite finite values.
+  - Input-scale check showed normalization explosion:
+    - `abs_max ~= 31057`, `abs_p99 ~= 31057`
+    - scaler stats: `scale min ~= 0.000128`, `tiny_scale_count(<0.05) = 9`
+- Stabilization actions applied in Colab runtime flow:
+  1. Generated `swat_fdc_train_clean_v2.csv` from clean SWaT file.
+  2. Preserved channel count, but handled low-variance channels with conservative median-fix and outlier clipping.
+  3. Updated PatchTST real config:
+     - `data.path = /content/AnomalyDetection/data/fdc/swat_fdc_train_clean_v2.csv`
+     - `training.lr = 1e-4`
+     - `device.amp = false`
+     - `training.epochs = 10`
+- Re-training result (PatchTST, real config):
+  - Epoch 1: `train=8.029775`, `val=39.985680`
+  - Epoch 10: `train=4.214598`, `val=21.153209`
+  - Conclusion: loss explosion resolved and learning trend became stable.
+- Artifact verification and save:
+  - Verified presence of both checkpoints and both real configs.
+  - Saved runtime bundle:
+    - `/content/run_bundle_20260221_095519`
+    - files: `patchtst_ssl.pt`, `swinmae_ssl.pt`, `patchtst_ssl_real.yaml`, `swinmae_ssl_real.yaml`
+- Current phase status:
+  - Phase-1 objective (train + smoke-level readiness + artifact persistence) is complete.
+  - Threshold policy (TPR/FPR operating point) intentionally deferred to next phase.

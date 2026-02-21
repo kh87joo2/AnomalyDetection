@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import glob
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
@@ -43,6 +45,69 @@ def _safe_sliding_windows(series: np.ndarray, window: int, stride: int) -> np.nd
     if series.shape[0] < window:
         return np.empty((0, window, series.shape[1]), dtype=np.float32)
     return sliding_windows(series, window=window, stride=stride).astype(np.float32)
+
+
+def _to_numeric_timestamps(timestamps: np.ndarray) -> np.ndarray:
+    series = pd.Series(timestamps)
+
+    num = pd.to_numeric(series, errors="coerce")
+    if int(num.notna().sum()) > 0:
+        return num.to_numpy(dtype=np.float64)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        dt_default = pd.to_datetime(series, errors="coerce")
+        dt_dayfirst = pd.to_datetime(series, errors="coerce", dayfirst=True)
+
+    dt = dt_dayfirst if int(dt_dayfirst.notna().sum()) > int(dt_default.notna().sum()) else dt_default
+    arr = dt.astype("int64").to_numpy(dtype=np.float64)
+    arr[dt.isna().to_numpy()] = np.nan
+    return arr
+
+
+def _sort_by_timestamp_if_enabled(
+    values: np.ndarray,
+    timestamps: np.ndarray | None,
+    allow_sort_fix: bool,
+) -> np.ndarray:
+    if not allow_sort_fix or timestamps is None or values.shape[0] <= 1:
+        return values
+
+    ts_num = _to_numeric_timestamps(timestamps)
+    valid = np.isfinite(ts_num)
+    if int(valid.sum()) < 2:
+        return values
+
+    values_valid = values[valid]
+    ts_valid = ts_num[valid]
+    order = np.argsort(ts_valid, kind="mergesort")
+    values_sorted = values_valid[order]
+    ts_sorted = ts_valid[order]
+
+    # Keep only first row per duplicated timestamp to ensure strict ordering.
+    keep = np.ones(ts_sorted.shape[0], dtype=bool)
+    keep[1:] = ts_sorted[1:] != ts_sorted[:-1]
+    return values_sorted[keep]
+
+
+def _impute_non_finite_with_train_stats(
+    train_raw: np.ndarray,
+    val_raw: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    train = np.where(np.isfinite(train_raw), train_raw, np.nan).astype(np.float32)
+    val = np.where(np.isfinite(val_raw), val_raw, np.nan).astype(np.float32)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        fill = np.nanmedian(train, axis=0)
+    fill = np.where(np.isfinite(fill), fill, 0.0).astype(np.float32)
+
+    train = np.where(np.isfinite(train), train, fill.reshape(1, -1))
+    val = np.where(np.isfinite(val), val, fill.reshape(1, -1))
+
+    train = np.nan_to_num(train, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+    val = np.nan_to_num(val, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+    return train, val
 
 
 def _resolve_paths(path_cfg: Any) -> list[Path]:
@@ -112,6 +177,7 @@ def _build_real(config: dict) -> FDCDatasets:
     timestamp_col = data_cfg.get("timestamp_col")
 
     dqvl_enabled = bool(dqvl_cfg.get("enabled", True))
+    allow_sort_fix = bool(dqvl_cfg.get("allow_sort_fix", False))
     report_dir = str(dqvl_cfg.get("report_dir", "artifacts/dqvl/fdc"))
     run_id = new_run_id()
 
@@ -127,16 +193,19 @@ def _build_real(config: dict) -> FDCDatasets:
             if report["decision"] == "drop":
                 continue
 
-        values = sample.values
+        values = sample.values.astype(np.float32)
         if values.ndim != 2 or values.shape[1] == 0:
+            continue
+
+        values = _sort_by_timestamp_if_enabled(values, sample.timestamps, allow_sort_fix)
+        if values.shape[0] <= 1:
             continue
 
         split_idx = int(values.shape[0] * train_ratio)
         if split_idx <= 0 or split_idx >= values.shape[0]:
             continue
 
-        train_raw = values[:split_idx]
-        val_raw = values[split_idx:]
+        train_raw, val_raw = _impute_non_finite_with_train_stats(values[:split_idx], values[split_idx:])
 
         train_w = _safe_sliding_windows(train_raw, window=seq_len, stride=seq_stride)
         val_w = _safe_sliding_windows(val_raw, window=seq_len, stride=seq_stride)
@@ -158,6 +227,10 @@ def _build_real(config: dict) -> FDCDatasets:
     scaler = ChannelScaler(method=norm_method)
     train_windows = scaler.fit_transform(train_windows)
     val_windows = scaler.transform(val_windows) if val_windows.shape[0] > 0 else val_windows
+
+    train_windows = np.nan_to_num(train_windows, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+    if val_windows.shape[0] > 0:
+        val_windows = np.nan_to_num(val_windows, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
 
     return FDCDatasets(train=FDCDataset(train_windows), val=FDCDataset(val_windows), scaler=scaler)
 
