@@ -170,3 +170,38 @@
    - `python -m inference.run_scoring_example --stream swinmae --checkpoint checkpoints/swinmae_ssl.pt --config configs/swinmae_ssl_real.yaml`
 5. If Colab upload widget is disabled, run separate upload cell first:
    - `from google.colab import files; files.upload()`
+
+## 11) Continuation update - 2026-02-21 (Colab real-data execution)
+- Completed end-to-end notebook runs in Colab for both streams:
+  - `notebooks/colab_patchtst_ssl.ipynb`
+  - `notebooks/colab_swinmae_ssl.ipynb`
+- PatchTST real-data training confirmed with epoch/loss logs:
+  - Example: Epoch 1/2 and Epoch 2/2 outputs with decreasing train/val losses.
+- SwinMAE real-data flow completed, including vibration dataset checks and visualization.
+- Kaggle auth issue resolved by using API key/username runtime input; upload widget path was unstable in some sessions.
+- Vibration `fs` handling:
+  - Timestamp-derived estimate produced unrealistic value (`~1e9`) due index-like timestamp behavior.
+  - Set `configs/swinmae_ssl_real.yaml` `data.fs = 10000` based on dataset context/metadata assumption.
+- Added notebook-level usability improvements:
+  - Training cells switched to streaming subprocess output for live progress visibility.
+  - Added/used data inspection and comparison cells (head, axis checks, healthy vs fault visual checks).
+- Git status:
+  - Notebook updates committed and pushed.
+  - Commit: `405affb chore(notebooks): refine colab execution flow [2026-02-21]`
+
+## 12) Current blocker and next plan (2026-02-21)
+- Blocker:
+  - Colab GPU quota appears exhausted; runtime connection became unstable.
+- Next actions after GPU becomes available:
+  1. Reconnect Colab runtime and verify GPU availability (`torch.cuda.is_available()`).
+  2. Re-run only minimum verification cells:
+     - repo bootstrap
+     - data check cells
+     - training cells (PatchTST, SwinMAE)
+     - checkpoint existence checks
+  3. Run inference smoke for both streams with real configs/checkpoints.
+  4. Review DQVL JSON outputs and summarize final keep/drop decisions.
+  5. Save final run bundle (checkpoints + real configs) to persistent storage (Drive or local download).
+- Fallback if GPU remains unavailable:
+  1. Run CPU-only smoke by reducing epochs/batches in real configs.
+  2. Defer full training until GPU quota resets.

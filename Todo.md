@@ -99,3 +99,32 @@
 3. In SwinMAE notebook, set `configs/swinmae_ssl_real.yaml:data.fs` from data check cell estimate before training.
 4. Confirm DQVL JSON outputs exist and inspect `decision`, `hard_fails`, `warnings`.
 5. Run inference scoring smoke for both streams with generated real-data checkpoints/configs.
+
+## 10) Progress Snapshot (2026-02-21 EOD)
+
+### Completed today
+1. Ran both Colab notebooks through full execution path with real-data flow.
+2. Verified PatchTST training logs with epoch-level loss outputs.
+3. Completed SwinMAE data checks and real-data training flow.
+4. Set `configs/swinmae_ssl_real.yaml` `data.fs` to `10000` after timestamp-estimation anomaly investigation.
+5. Updated notebook training cells to stream logs in real time for clearer progress tracking.
+6. Committed and pushed notebook refinements:
+   - `405affb chore(notebooks): refine colab execution flow [2026-02-21]`
+
+### Current blocker
+1. Colab GPU quota/runtime instability prevented stable continuation.
+
+### Immediate next execution tasks (resume point)
+1. Recover stable Colab runtime and confirm CUDA availability.
+2. Re-run minimal required cells only:
+   - bootstrap
+   - Kaggle/data-check cells
+   - training cells
+   - checkpoint check cells
+3. Run scoring smoke on both streams using real configs.
+4. Verify DQVL reports under `artifacts/dqvl/fdc` and `artifacts/dqvl/vib`.
+5. Save final artifacts bundle to persistent storage.
+
+### Fallback path (if GPU quota still exhausted)
+1. Lower epochs and max batches for CPU smoke verification only.
+2. Defer full real-data training until GPU quota reset.
