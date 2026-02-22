@@ -17,18 +17,19 @@ The Ralph loop managed plan section is appended or updated automatically.
 - `README.md`
 
 ### Priority Queue
-- [ ] P1: Implement Previous scope backup: docs/archive/phase1_5_snapshot_2026-02-22/
-- [ ] P2: Implement Current execution scope: dashboard implementation for training observability
-- [ ] P3: Implement checkpoints
-- [ ] P4: Implement artifacts
-- [ ] P5: Implement final configs
-- [ ] P6: Implement validation checklist results
-- [ ] P7: Implement checkpoints ready
-- [ ] P8: Implement scaler ready
-- [ ] P9: Implement logs ready
-- [ ] P10: Implement backup ready
-- [ ] P11: Implement 2) P0 - Dashboard Skeleton
-- [ ] P12: Implement 3) P0 - Runtime Data Export
+- [ ] P1: Implement 2) P0 - Dashboard Skeleton
+- [ ] P2: Implement 3) P0 - Runtime Data Export
+- [ ] P3: Implement 4) P0 - Checklist and Metrics Panels
+- [ ] P4: Implement Current execution scope: dashboard implementation for training observability
+- [ ] P5: Implement validation checklist results
+- [ ] P6: Implement checkpoints ready
+- [ ] P7: Implement scaler ready
+- [ ] P8: Implement logs ready
+- [ ] P9: Implement backup ready
+- [ ] P10: Implement checkpoints
+- [ ] P11: Implement artifacts
+- [ ] P12: Implement final configs
+- [x] P13: Implement Previous scope backup: docs/archive/phase1_5_snapshot_2026-02-22/
 
 ### Generated Specs
 - `specs/generated/README.md`
