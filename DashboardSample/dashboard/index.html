@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lab Director Dashboard</title>
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/nodes.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="top-bar">
+        <div class="title-block">
+          <p class="eyebrow">Realtime orchestration</p>
+          <h1 id="dashboard-title">Lab Director Dashboard</h1>
+          <p id="dashboard-subtitle" class="subtitle">Node Graph Control Panel</p>
+        </div>
+        <div class="header-right">
+          <div class="date-card">
+            <span class="date-label">Date</span>
+            <strong id="dashboard-date">-</strong>
+          </div>
+          <nav id="view-tabs" class="tab-list" aria-label="Dashboard views"></nav>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section id="canvas-wrapper" class="canvas-wrapper" aria-label="Interactive graph canvas">
+          <div id="graph-viewport" class="graph-viewport">
+            <div id="group-layer" class="group-layer"></div>
+            <svg id="connection-layer" class="connection-layer" aria-hidden="true"></svg>
+            <div id="node-layer" class="node-layer"></div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="bottom-bar">
+        <div class="legend" id="legend"></div>
+        <div class="status" id="status-text">Drag nodes. Drag empty space to pan. Wheel to zoom.</div>
+      </footer>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,42 @@
+.connection-layer {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.connection-line {
+  fill: none;
+  stroke: rgba(46, 200, 255, 0.92);
+  stroke-width: 2;
+  stroke-dasharray: 9 5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 7px rgba(46, 200, 255, 0.75));
+  animation: dash-flow 0.9s linear infinite;
+}
+
+.connection-line.echo {
+  stroke: rgba(138, 220, 255, 0.28);
+  stroke-width: 5;
+  stroke-dasharray: 2 14;
+  animation-duration: 1.45s;
+}
+
+.connection-line.is-hidden {
+  display: none;
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}

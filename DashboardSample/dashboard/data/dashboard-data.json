@@ -1,0 +1,266 @@
+{
+  "meta": {
+    "title": "Lab Director Dashboard",
+    "subtitle": "Node Graph Control Panel",
+    "date": "2026-02-13"
+  },
+  "views": [
+    {
+      "id": "research",
+      "name": "Research Flow",
+      "canvas": { "width": 1800, "height": 1100 },
+      "groups": [
+        {
+          "id": "research-assistant",
+          "label": "Research Assistant",
+          "x": 120,
+          "y": 190,
+          "width": 760,
+          "height": 520
+        },
+        {
+          "id": "lecture-assistant",
+          "label": "Lecture Assistant",
+          "x": 980,
+          "y": 240,
+          "width": 620,
+          "height": 460
+        }
+      ],
+      "nodes": [
+        {
+          "id": "director",
+          "label": "Lab Director",
+          "subtitle": "PI Control",
+          "type": "pi",
+          "x": 760,
+          "y": 70,
+          "icon": "PI"
+        },
+        {
+          "id": "research-planner",
+          "label": "Research Planner",
+          "subtitle": "Workflow Hub",
+          "type": "function",
+          "x": 260,
+          "y": 280,
+          "icon": "R"
+        },
+        {
+          "id": "paper-agent",
+          "label": "Paper Agent",
+          "subtitle": "Draft + Review",
+          "type": "agent",
+          "x": 220,
+          "y": 440,
+          "icon": "P"
+        },
+        {
+          "id": "experiment-agent",
+          "label": "Experiment Agent",
+          "subtitle": "Hypothesis + Logs",
+          "type": "agent",
+          "x": 510,
+          "y": 440,
+          "icon": "E"
+        },
+        {
+          "id": "literature-api",
+          "label": "Literature API",
+          "subtitle": "External Source",
+          "type": "tool",
+          "x": 140,
+          "y": 610,
+          "icon": "L"
+        },
+        {
+          "id": "lab-db",
+          "label": "Lab Data Lake",
+          "subtitle": "Dataset Store",
+          "type": "tool",
+          "x": 470,
+          "y": 610,
+          "icon": "D"
+        },
+        {
+          "id": "lecture-planner",
+          "label": "Lecture Planner",
+          "subtitle": "Class Design",
+          "type": "function",
+          "x": 1130,
+          "y": 320,
+          "icon": "C"
+        },
+        {
+          "id": "slide-agent",
+          "label": "Slide Agent",
+          "subtitle": "Deck Builder",
+          "type": "agent",
+          "x": 1030,
+          "y": 480,
+          "icon": "S"
+        },
+        {
+          "id": "quiz-agent",
+          "label": "Quiz Agent",
+          "subtitle": "Assessment",
+          "type": "agent",
+          "x": 1310,
+          "y": 480,
+          "icon": "Q"
+        },
+        {
+          "id": "lms",
+          "label": "LMS Connector",
+          "subtitle": "Publishing",
+          "type": "tool",
+          "x": 1140,
+          "y": 640,
+          "icon": "M"
+        },
+        {
+          "id": "insight-hub",
+          "label": "Insight Hub",
+          "subtitle": "Shared Analytics",
+          "type": "function",
+          "x": 760,
+          "y": 840,
+          "icon": "I"
+        }
+      ],
+      "connections": [
+        { "id": "c1", "from": "director", "to": "research-planner" },
+        { "id": "c2", "from": "director", "to": "lecture-planner" },
+        { "id": "c3", "from": "research-planner", "to": "paper-agent" },
+        { "id": "c4", "from": "research-planner", "to": "experiment-agent" },
+        { "id": "c5", "from": "paper-agent", "to": "literature-api" },
+        { "id": "c6", "from": "experiment-agent", "to": "lab-db" },
+        { "id": "c7", "from": "lecture-planner", "to": "slide-agent" },
+        { "id": "c8", "from": "lecture-planner", "to": "quiz-agent" },
+        { "id": "c9", "from": "slide-agent", "to": "lms" },
+        { "id": "c10", "from": "quiz-agent", "to": "lms" },
+        { "id": "c11", "from": "paper-agent", "to": "insight-hub" },
+        { "id": "c12", "from": "experiment-agent", "to": "insight-hub" },
+        { "id": "c13", "from": "slide-agent", "to": "insight-hub" },
+        { "id": "c14", "from": "insight-hub", "to": "director" }
+      ]
+    },
+    {
+      "id": "lecture",
+      "name": "Lecture Flow",
+      "canvas": { "width": 1800, "height": 1100 },
+      "groups": [
+        {
+          "id": "lecture-assistant",
+          "label": "Lecture Assistant",
+          "x": 220,
+          "y": 200,
+          "width": 1360,
+          "height": 620
+        },
+        {
+          "id": "research-assistant",
+          "label": "Research Assistant",
+          "x": 220,
+          "y": 860,
+          "width": 560,
+          "height": 180
+        }
+      ],
+      "nodes": [
+        {
+          "id": "director",
+          "label": "Lab Director",
+          "subtitle": "PI Control",
+          "type": "pi",
+          "x": 790,
+          "y": 80,
+          "icon": "PI"
+        },
+        {
+          "id": "lecture-planner",
+          "label": "Lecture Planner",
+          "subtitle": "Topic Scheduler",
+          "type": "function",
+          "x": 770,
+          "y": 290,
+          "icon": "C"
+        },
+        {
+          "id": "slide-agent",
+          "label": "Slide Agent",
+          "subtitle": "Narrative Deck",
+          "type": "agent",
+          "x": 470,
+          "y": 500,
+          "icon": "S"
+        },
+        {
+          "id": "quiz-agent",
+          "label": "Quiz Agent",
+          "subtitle": "Adaptive Quiz",
+          "type": "agent",
+          "x": 780,
+          "y": 500,
+          "icon": "Q"
+        },
+        {
+          "id": "video-agent",
+          "label": "Video Agent",
+          "subtitle": "Clip Composer",
+          "type": "agent",
+          "x": 1090,
+          "y": 500,
+          "icon": "V"
+        },
+        {
+          "id": "attendance-tool",
+          "label": "Attendance Bot",
+          "subtitle": "Live Sync",
+          "type": "tool",
+          "x": 410,
+          "y": 700,
+          "icon": "A"
+        },
+        {
+          "id": "lms",
+          "label": "LMS Connector",
+          "subtitle": "Publishing",
+          "type": "tool",
+          "x": 740,
+          "y": 700,
+          "icon": "M"
+        },
+        {
+          "id": "feedback-tool",
+          "label": "Feedback Miner",
+          "subtitle": "Class Sentiment",
+          "type": "tool",
+          "x": 1080,
+          "y": 700,
+          "icon": "F"
+        },
+        {
+          "id": "research-planner",
+          "label": "Research Planner",
+          "subtitle": "Lecture Insights",
+          "type": "function",
+          "x": 320,
+          "y": 900,
+          "icon": "R"
+        }
+      ],
+      "connections": [
+        { "id": "l1", "from": "director", "to": "lecture-planner" },
+        { "id": "l2", "from": "lecture-planner", "to": "slide-agent" },
+        { "id": "l3", "from": "lecture-planner", "to": "quiz-agent" },
+        { "id": "l4", "from": "lecture-planner", "to": "video-agent" },
+        { "id": "l5", "from": "slide-agent", "to": "attendance-tool" },
+        { "id": "l6", "from": "quiz-agent", "to": "lms" },
+        { "id": "l7", "from": "video-agent", "to": "feedback-tool" },
+        { "id": "l8", "from": "feedback-tool", "to": "research-planner" },
+        { "id": "l9", "from": "research-planner", "to": "director" }
+      ]
+    }
+  ]
+}
