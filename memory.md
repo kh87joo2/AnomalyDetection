@@ -232,3 +232,72 @@
 - Current phase status:
   - Phase-1 objective (train + smoke-level readiness + artifact persistence) is complete.
   - Threshold policy (TPR/FPR operating point) intentionally deferred to next phase.
+
+## 14) Continuation update - 2026-02-22 (Phase 2 dashboard bootstrap + T02 export)
+- Planning and loop setup updates:
+  - Rebuilt `IMPLEMENTATION_PLAN.md` to make Priority Queue and Task Cards 1:1.
+  - Added explicit per-task Acceptance Criteria / Deliverables / Verify.
+  - Clarified in-scope/out-of-scope and open decision questions with defaults.
+- Training output validation pipeline enhancements:
+  - Added post-training checklist automation in `pipelines/validate_training_outputs.py` (already present and reused).
+  - Added loss artifact persistence in trainers (`artifacts/loss/*_loss_history.csv`, `*_loss_curve.png`).
+- Dashboard T01 implemented (skeleton):
+  - Added `training_dashboard/` static app:
+    - `index.html`
+    - `css/main.css`, `css/nodes.css`, `css/animations.css`
+    - `js/app.js`, `js/nodes.js`, `js/connections.js`, `js/drag.js`
+    - `data/dashboard-layout.json`
+  - Verified rendering route:
+    - `python -m http.server 8765 --directory /home/userkh/workspace/ML_test/anomalydetection/training_dashboard`
+    - URL: `http://127.0.0.1:8765/index.html`
+- Dashboard T02 implemented (runtime state export):
+  - Added `pipelines/export_training_dashboard_state.py`.
+  - Added schema validation for state contract:
+    - top-level keys: `meta`, `nodes`, `checklist`, `metrics`, `artifacts`.
+  - Reused existing validator checks (no duplicated logic).
+  - Added test file:
+    - `tests/pipelines/test_export_training_dashboard_state.py`
+  - Updated docs:
+    - `docs/runbook.md` with Phase 2 export commands.
+  - Updated ignore:
+    - `.gitignore` includes `training_dashboard/data/dashboard-state.json`.
+- Environment and verification notes:
+  - Local run of export works and generates `dashboard-state.json`.
+  - Local checklist may show partial pass (e.g., `3/7`) when training artifacts are not present locally.
+  - Colab checklist previously reached full pass (`7/7`) when artifacts existed.
+  - No critical code error found for T02; observed differences were environment/path dependent (local vs Colab artifact presence).
+- Local venv safety cleanup:
+  - User requested removing only today's installed packages from `.venv`.
+  - Generated "today package list" and uninstalled those packages only.
+  - Confirmed heavy CUDA-related pip packages were removed from `.venv`.
+  - Kept `.venv` directory itself.
+
+## 15) Git commits summary - 2026-02-22
+- `45a3c25` chore(ralph-loop): bootstrap phase2 dashboard planning baseline
+- `4832d1f` chore(plan): reprioritize ralph loop for dashboard p0 flow
+- `efa3c82` chore(plan): harden dashboard execution criteria
+- `ab68f10` feat(training-dashboard): scaffold p0 dashboard skeleton
+- `c183c50` feat(pipelines): add dashboard runtime state export
+- `c4a8814` chore(notebooks): sync colab swinmae session state
+- Note:
+  - `c731ff3` (`chore(wip): ralph checkpoint ...`) exists as auto WIP commit from loop script behavior.
+
+## 16) Remaining work (next execution order)
+1. T02 - Colab environment result confirmation
+   - Run checklist in Colab and save evidence log:
+     - `python -m pipelines.validate_training_outputs --repo-root /content/AnomalyDetection --smoke | tee /content/AnomalyDetection/artifacts/validation/validate_<date>.txt`
+   - Rebuild runtime state in Colab and confirm `dashboard-state.json`:
+     - `python -m pipelines.export_training_dashboard_state --repo-root /content/AnomalyDetection --out /content/AnomalyDetection/training_dashboard/data/dashboard-state.json --run-id <run_id> --run-smoke`
+   - Confirm top-level contract keys exist: `meta`, `nodes`, `checklist`, `metrics`, `artifacts`.
+2. T03 - Checklist and metrics panels in dashboard UI
+   - Make frontend consume `training_dashboard/data/dashboard-state.json`.
+   - Render checklist rows (`[v]/[ ]`, PASS/FAIL, detail/hint).
+   - Render summary cards (checkpoints/scaler/logs/backup readiness).
+   - Render loss trends for PatchTST/SwinMAE from exported state.
+3. T04 - Run history and comparison
+   - Persist per-run snapshots and selector UI.
+   - Add baseline delta comparison (checklist pass count and final losses).
+4. T05 - UX polish
+   - Finalize status animation by node state.
+   - Add quick links to artifact/log paths.
+   - Confirm mobile-safe layout behavior.
