@@ -44,3 +44,20 @@ There is no commit history yet in this directory, so adopt this convention now:
 - Never commit secrets, tokens, or raw sensitive datasets.
 - Use `.env` for local secrets and provide `.env.example` with placeholder keys.
 - Pin dependency versions and review updates for reproducibility.
+
+<!-- ralph-loop:managed:start -->
+## Ralph Loop Contract
+
+### Setup Mode (Default)
+- Allowed writes: `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, `specs/generated/*.md`, `PROMPT_plan.md`, `PROMPT_build.md`, `loop.sh`, `.ralph-loop/*.py`.
+- Read-only inputs: `prd.md`, `trd.md`, `todo.md`, `docs/prd.md`, `docs/trd.md`, `docs/todo.md`, `specs/*.md` (human-authored), `README.md`.
+- Forbidden actions: source code edits, test execution, commits.
+
+### Build Mode (Explicit)
+- Select one highest-priority `[ ]` task and mark it `[-]`.
+- Implement only that task, then run verification commands.
+- Mark task `[x]` after checks pass.
+
+### Verification Commands
+- `pytest`
+<!-- ralph-loop:managed:end -->

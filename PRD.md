@@ -1,95 +1,78 @@
-# PRD (Product Requirements Doc) - Phase 1.5 Real-Data Connection (Reduced Scope) [2026-02-20]
+# PRD (Product Requirements Doc) - Phase 2 Training Pipeline Dashboard [2026-02-22]
 
 ## Document Scope Tags
 
-- Legacy baseline (Phase 1): before 2026-02-20
-- Current scope (Phase 1.5): 2026-02-20
-- Legacy file: `docs/archive/phase1_legacy/PRD_phase1.md`
+- Previous scope (Phase 1.5): real-data connection and Colab execution
+- Current scope (Phase 2): training pipeline dashboard
+- Backup snapshot: `docs/archive/phase1_5_snapshot_2026-02-22/`
 
 ## 0) Decision Lock (Applied)
 
-- Keep training entry points unchanged:
-  - `python -m trainers.train_patchtst_ssl --config ...`
-  - `python -m trainers.train_swinmae_ssl --config ...`
-- Add real-data support only inside `build_fdc_datasets()` and `build_vibration_datasets()` via `data.source` branching.
-- Reader layer must be non-mutating (as-is load only): no auto sort, no interpolation, no imputation.
-- DQVL-lite is required for real-data path and must separate `hard_fail` and `warning`.
-- DQ decision is file-level only in Phase 1.5: `keep | drop`.
-- Leakage prevention is fixed: split by time first, then windowing; never create cross-file windows.
-- FS mismatch policy is fixed:
-  - `data.resample.enabled=false` -> mismatch is hard fail (drop)
-  - `data.resample.enabled=true` -> only configured deterministic resample is allowed
-- Backward compatibility is fixed: keep existing config keys used by current trainers/builders and add only minimal new keys.
+- This phase focuses only on training pipeline visualization and run validation UX.
+- Fusion/threshold automation is explicitly out of scope for this phase.
+- Dashboard foundation reuses `DashboardSample/dashboard` interaction pattern (HTML/CSS/JS + SVG).
+- First release can run in static/local mode (file-based data input), without backend service.
+- Existing training CLI and config contracts remain unchanged.
 
 ## 1) Product Goal
 
-Connect real FDC/vibration data to existing PatchTST-SSL and SwinMAE-SSL pipelines without changing trainer entry points, while preventing low-quality data from contaminating training.
+Provide a single dashboard where users can verify training execution status, key loss trends, and output readiness gates without manually checking multiple folders/logs.
 
-## 2) In-Scope Features (Phase 1.5)
+## 2) In-Scope Features (Phase 2)
 
-### A) Data Contract
+### A) Training Graph View
 
-- Add `datasets/contracts.md` with required columns, accepted formats, and minimal examples.
-- FDC contract: timestamp + multivariate process parameters.
-- Vibration contract: x/y/z + timestamp or sample index + fs metadata rule.
+- Node graph view for training pipeline stages:
+  - data prep
+  - dqvl
+  - patchtst training
+  - swinmae training
+  - artifact save
+  - validation gate
+- Node status rendering: `idle | running | done | fail`.
+- Connection flow animation and node-type legend/filter.
 
-### B) Real-Data Readers
+### B) Checklist Gate View
 
-- Add readers:
-  - `datasets/readers/fdc_reader.py`
-  - `datasets/readers/vib_reader.py`
-- Supported input for this phase:
-  - FDC: CSV/Parquet
-  - Vibration: CSV/NPY
+- Render the 7-item validation checklist from `pipelines.validate_training_outputs`.
+- Show each item with `[v]/[ ]`, `PASS/FAIL`, detail message, and remediation hint.
+- Show summary count: `passed / total`.
 
-### C) DQVL-lite (Minimum)
+### C) Loss & Run Summary Panel
 
-- Add DQVL modules:
-  - `dqvl/fdc_rules.py`
-  - `dqvl/vib_rules.py`
-  - `dqvl/report.py`
-- Required output: decision-focused JSON with `hard_fails`, `warnings`, and metrics.
+- Show train/val loss trend snapshots for PatchTST and SwinMAE.
+- Show final config highlights (`fs`, `lr`, `epochs`, `mask_ratio`, `amp`).
+- Show artifact existence quick status (checkpoint/scaler/runs/backup).
 
-### D) Existing Dataset Builder Integration
+### D) Run History (Basic)
 
-- `datasets/fdc_dataset.py`: add `source=synthetic|csv|parquet` branch.
-- `datasets/vib_dataset.py`: add `source=synthetic|csv|npy` branch.
-- Preserve existing train/val flow and normalization policy (`fit on train only`).
+- Support selecting a run record from local run snapshots.
+- Compare high-level metrics between selected runs.
 
-### E) Real-Data Smoke Validation
+## 3) Out of Scope (Phase 2)
 
-- Add minimal smoke tests with dummy files:
-  - `tests/test_fdc_csv_smoke.py`
-  - `tests/test_vib_csv_smoke.py`
-- Verify one-batch forward + finite loss.
-
-## 3) Out of Scope (Phase 1.5)
-
-- New pipeline entry points (`pipelines/run_*.py`)
-- Full DQ score engine (weighted quality score optimization)
-- Automatic FS estimation-based resampling
-- Large-data optimization (chunking/memmap/distributed)
-- Dashboard/report UI
+- Real-time distributed orchestration backend (SSE/WS mandatory integration).
+- Multi-user auth/RBAC, external database, tenant isolation.
+- Fusion score generation and threshold calibration workflow implementation.
+- Alert routing, incident workflow, and report publishing automation.
 
 ## 4) User Scenarios
 
-- User sets `data.source=csv` and `data.path=...` and runs existing trainer command without code changes.
-- System drops clearly invalid files via DQVL hard-fail and records why.
-- System warns on recoverable quality issues while continuing if policy allows.
-- User can run synthetic and real-data modes from the same codebase.
+- User finishes training and opens dashboard to confirm outputs are ready.
+- User quickly identifies which validation checklist item failed and why.
+- User compares current run against previous run before promoting artifacts.
 
 ## 5) Success Criteria
 
-- Existing synthetic path remains operational and unchanged in CLI usage.
-- Real-data path runs end-to-end for both streams with same trainer entry points.
-- DQVL report JSON is generated with required schema fields.
-- No train/val leakage from split/window order violations.
-- No windows are generated across file boundaries.
-- Smoke tests for CSV/NPY loaders pass with finite training loss.
+- Dashboard loads and renders the training node graph and checklist without manual HTML edits.
+- Validation results can be refreshed from generated run state data.
+- Both model streams' loss trend is visible on one screen.
+- User can determine release readiness within 1 minute of opening dashboard.
 
 ## 6) References
 
-- PatchTST: https://github.com/yuqinie98/PatchTST
-- PatchTST paper: https://arxiv.org/abs/2211.14730
-- Swin-MAE paper: https://arxiv.org/abs/2212.13805
-- Swin-MAE code: https://github.com/Zian-Xu/Swin-MAE
+- Dashboard sample: `DashboardSample/dashboard/`
+- Training output validator: `pipelines/validate_training_outputs.py`
+- Existing training pipelines:
+  - `trainers/train_patchtst_ssl.py`
+  - `trainers/train_swinmae_ssl.py`
