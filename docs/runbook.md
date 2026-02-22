@@ -31,6 +31,14 @@
   - `[v] PASS` or `[ ] FAIL` per checklist item.
   - Summary with passed/failed counts.
 
+## Dashboard state export (Phase 2)
+- Generate runtime state JSON:
+  - `python -m pipelines.export_training_dashboard_state --repo-root . --out training_dashboard/data/dashboard-state.json`
+- Optional smoke-included export:
+  - `python -m pipelines.export_training_dashboard_state --repo-root . --out training_dashboard/data/dashboard-state.json --run-smoke`
+- Start dashboard static server:
+  - `python -m http.server 8765 --directory training_dashboard`
+
 ## Local CUDA PC migration
 - Copy repo as-is.
 - Install compatible CUDA PyTorch build.

@@ -8,3 +8,4 @@ __pycache__/
 checkpoints/
 artifacts/
 runs/
+training_dashboard/data/dashboard-state.json

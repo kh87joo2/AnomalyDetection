@@ -29,7 +29,7 @@ The Ralph loop managed plan section is appended or updated automatically.
 
 ### Priority Queue
 - [x] P1: Implement P0 Dashboard Skeleton
-- [ ] P2: Implement P0 Runtime Data Export
+- [x] P2: Implement P0 Runtime Data Export
 - [ ] P3: Implement P0 Checklist and Metrics Panels
 - [ ] P4: Implement P1 Run History and Comparison
 - [ ] P5: Implement P1 UX Polish
