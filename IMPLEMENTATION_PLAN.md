@@ -28,7 +28,7 @@ The Ralph loop managed plan section is appended or updated automatically.
   - Fusion/threshold automation and operational alert workflows (`PRD.md` section 3)
 
 ### Priority Queue
-- [ ] P1: Implement P0 Dashboard Skeleton
+- [x] P1: Implement P0 Dashboard Skeleton
 - [ ] P2: Implement P0 Runtime Data Export
 - [ ] P3: Implement P0 Checklist and Metrics Panels
 - [ ] P4: Implement P1 Run History and Comparison

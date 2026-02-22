@@ -1,0 +1,198 @@
+{
+  "meta": {
+    "title": "Training Pipeline Dashboard",
+    "subtitle": "PatchTST + SwinMAE Node Graph",
+    "date": "2026-02-22"
+  },
+  "views": [
+    {
+      "id": "training-flow",
+      "name": "Training Flow",
+      "canvas": {
+        "width": 1800,
+        "height": 1080
+      },
+      "groups": [
+        {
+          "id": "data-stage",
+          "label": "Data Preparation",
+          "x": 90,
+          "y": 190,
+          "width": 520,
+          "height": 420
+        },
+        {
+          "id": "model-stage",
+          "label": "Model Training",
+          "x": 700,
+          "y": 190,
+          "width": 1040,
+          "height": 420
+        },
+        {
+          "id": "gate-stage",
+          "label": "Output Gate",
+          "x": 680,
+          "y": 700,
+          "width": 860,
+          "height": 220
+        }
+      ],
+      "nodes": [
+        {
+          "id": "orchestrator",
+          "label": "Pipeline Orchestrator",
+          "subtitle": "Run Control",
+          "type": "pi",
+          "x": 760,
+          "y": 70,
+          "icon": "PI"
+        },
+        {
+          "id": "data-prep",
+          "label": "Data Prep",
+          "subtitle": "Clean + Align",
+          "type": "function",
+          "x": 180,
+          "y": 280,
+          "icon": "DP"
+        },
+        {
+          "id": "dqvl",
+          "label": "DQVL",
+          "subtitle": "Data Quality Gate",
+          "type": "function",
+          "x": 180,
+          "y": 440,
+          "icon": "DQ"
+        },
+        {
+          "id": "patchtst",
+          "label": "PatchTST SSL",
+          "subtitle": "FDC Stream",
+          "type": "agent",
+          "x": 840,
+          "y": 300,
+          "icon": "PT"
+        },
+        {
+          "id": "swinmae",
+          "label": "Wavelet + SwinMAE",
+          "subtitle": "Vibration Stream",
+          "type": "agent",
+          "x": 1140,
+          "y": 300,
+          "icon": "SW"
+        },
+        {
+          "id": "artifact-save",
+          "label": "Artifact Save",
+          "subtitle": "Checkpoints + Logs",
+          "type": "tool",
+          "x": 950,
+          "y": 510,
+          "icon": "AR"
+        },
+        {
+          "id": "validation-gate",
+          "label": "Validation Gate",
+          "subtitle": "PASS/FAIL Checklist",
+          "type": "function",
+          "x": 1240,
+          "y": 510,
+          "icon": "VG"
+        },
+        {
+          "id": "run-summary",
+          "label": "Run Summary",
+          "subtitle": "Ready for Dashboard",
+          "type": "tool",
+          "x": 960,
+          "y": 760,
+          "icon": "RS"
+        }
+      ],
+      "connections": [
+        { "id": "c1", "from": "orchestrator", "to": "data-prep" },
+        { "id": "c2", "from": "data-prep", "to": "dqvl" },
+        { "id": "c3", "from": "dqvl", "to": "patchtst" },
+        { "id": "c4", "from": "dqvl", "to": "swinmae" },
+        { "id": "c5", "from": "patchtst", "to": "artifact-save" },
+        { "id": "c6", "from": "swinmae", "to": "artifact-save" },
+        { "id": "c7", "from": "artifact-save", "to": "validation-gate" },
+        { "id": "c8", "from": "validation-gate", "to": "run-summary" }
+      ]
+    },
+    {
+      "id": "artifact-gate",
+      "name": "Artifact Gate",
+      "canvas": {
+        "width": 1800,
+        "height": 1080
+      },
+      "groups": [
+        {
+          "id": "artifact-check",
+          "label": "Output Checks",
+          "x": 180,
+          "y": 210,
+          "width": 1440,
+          "height": 560
+        }
+      ],
+      "nodes": [
+        {
+          "id": "checkpoint-check",
+          "label": "Checkpoint Check",
+          "subtitle": "patchtst/swinmae",
+          "type": "tool",
+          "x": 320,
+          "y": 390,
+          "icon": "CK"
+        },
+        {
+          "id": "scaler-check",
+          "label": "Scaler Check",
+          "subtitle": "scaler_fdc.json",
+          "type": "tool",
+          "x": 620,
+          "y": 390,
+          "icon": "SC"
+        },
+        {
+          "id": "runs-check",
+          "label": "Run Log Check",
+          "subtitle": "runs/* events",
+          "type": "tool",
+          "x": 920,
+          "y": 390,
+          "icon": "LG"
+        },
+        {
+          "id": "config-check",
+          "label": "Config Freeze",
+          "subtitle": "*_real.yaml",
+          "type": "function",
+          "x": 1220,
+          "y": 390,
+          "icon": "CF"
+        },
+        {
+          "id": "release-ready",
+          "label": "Release Ready",
+          "subtitle": "Gate Summary",
+          "type": "pi",
+          "x": 760,
+          "y": 590,
+          "icon": "OK"
+        }
+      ],
+      "connections": [
+        { "id": "g1", "from": "checkpoint-check", "to": "release-ready" },
+        { "id": "g2", "from": "scaler-check", "to": "release-ready" },
+        { "id": "g3", "from": "runs-check", "to": "release-ready" },
+        { "id": "g4", "from": "config-check", "to": "release-ready" }
+      ]
+    }
+  ]
+}

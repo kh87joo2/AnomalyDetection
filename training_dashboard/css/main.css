@@ -1,0 +1,258 @@
+:root {
+  --bg-0: #050814;
+  --bg-1: #0c1329;
+  --bg-2: #111c38;
+  --ink-0: #e7f0ff;
+  --ink-1: #9fb1d7;
+  --line: rgba(97, 137, 226, 0.25);
+  --cyan: #2ec8ff;
+  --blue: #4f7cff;
+  --rose: #ff5b7a;
+  --gold: #ffcd63;
+  --lime: #72f3ba;
+  --viewport-grid: rgba(158, 188, 255, 0.09);
+  --shadow-neon: 0 0 0 1px rgba(64, 123, 255, 0.3), 0 22px 50px rgba(0, 6, 24, 0.65);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: var(--ink-0);
+  background:
+    radial-gradient(circle at 14% 10%, rgba(79, 124, 255, 0.14), transparent 40%),
+    radial-gradient(circle at 82% 22%, rgba(46, 200, 255, 0.1), transparent 34%),
+    linear-gradient(155deg, var(--bg-0), var(--bg-1) 55%, var(--bg-2));
+  overflow: hidden;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 14px;
+  padding: 14px;
+}
+
+.top-bar {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  background: linear-gradient(155deg, rgba(19, 31, 61, 0.72), rgba(10, 16, 34, 0.92));
+  box-shadow: var(--shadow-neon);
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.68rem;
+  color: var(--ink-1);
+}
+
+h1 {
+  margin: 2px 0;
+  font-size: clamp(1.2rem, 2.4vw, 1.7rem);
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-1);
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.date-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(11, 20, 43, 0.85);
+  border: 1px solid rgba(104, 152, 255, 0.32);
+}
+
+.date-label {
+  font-size: 0.75rem;
+  color: var(--ink-1);
+}
+
+.date-card strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+}
+
+.tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tab-button {
+  border: 1px solid rgba(125, 159, 235, 0.4);
+  color: var(--ink-0);
+  background: rgba(13, 23, 44, 0.68);
+  border-radius: 999px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font: 600 0.78rem "IBM Plex Mono", monospace;
+  letter-spacing: 0.02em;
+  transition: 180ms ease;
+}
+
+.tab-button:hover {
+  border-color: rgba(102, 228, 255, 0.85);
+  box-shadow: 0 0 22px rgba(45, 176, 255, 0.25);
+}
+
+.tab-button[aria-selected="true"] {
+  background: linear-gradient(120deg, rgba(46, 200, 255, 0.22), rgba(79, 124, 255, 0.3));
+  border-color: rgba(127, 232, 255, 0.88);
+}
+
+.workspace {
+  min-height: 0;
+}
+
+.canvas-wrapper {
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(90, 130, 220, 0.4);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  background:
+    linear-gradient(var(--viewport-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--viewport-grid) 1px, transparent 1px),
+    radial-gradient(circle at 50% 40%, rgba(30, 50, 100, 0.55), rgba(6, 12, 25, 0.96));
+  background-size: 38px 38px, 38px 38px, auto;
+  touch-action: none;
+}
+
+.graph-viewport {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+
+.group-layer,
+.connection-layer,
+.node-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.group-box {
+  position: absolute;
+  border: 1px dashed rgba(117, 165, 255, 0.55);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(31, 56, 102, 0.16), rgba(14, 24, 47, 0.1));
+  box-shadow: inset 0 0 20px rgba(52, 104, 201, 0.18);
+}
+
+.group-box .group-title {
+  position: absolute;
+  top: -12px;
+  left: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(118, 179, 255, 0.55);
+  color: var(--ink-0);
+  font: 600 0.7rem "IBM Plex Mono", monospace;
+  background: rgba(10, 18, 38, 0.92);
+}
+
+.bottom-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(7, 13, 27, 0.86);
+  padding: 10px 14px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.legend-chip {
+  border: 1px solid rgba(118, 151, 225, 0.46);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font: 500 0.74rem "IBM Plex Mono", monospace;
+  color: var(--ink-0);
+  background: rgba(15, 26, 51, 0.76);
+  cursor: pointer;
+  transition: 160ms ease;
+}
+
+.legend-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(120, 225, 255, 0.88);
+}
+
+.legend-chip[aria-pressed="false"] {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.status {
+  color: var(--ink-1);
+  font: 500 0.74rem "IBM Plex Mono", monospace;
+}
+
+@media (max-width: 980px) {
+  body {
+    overflow: auto;
+  }
+
+  .app-shell {
+    min-height: 100vh;
+  }
+
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-right {
+    margin-left: 0;
+    align-items: flex-start;
+  }
+
+  .canvas-wrapper {
+    min-height: 72vh;
+  }
+
+  .bottom-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
