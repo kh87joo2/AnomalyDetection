@@ -8,3 +8,4 @@ PyWavelets>=1.5
 einops>=0.7
 tqdm>=4.66
 tensorboard>=2.15
+matplotlib>=3.8

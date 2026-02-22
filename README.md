@@ -52,6 +52,20 @@ SwinMAE-SSL:
 python -m trainers.train_swinmae_ssl --config configs/swinmae_ssl.yaml
 ```
 
+## Loss curve artifacts
+
+After training, both scripts save epoch loss artifacts:
+- `artifacts/loss/patchtst_loss_history.csv`
+- `artifacts/loss/patchtst_loss_curve.png`
+- `artifacts/loss/swinmae_loss_history.csv`
+- `artifacts/loss/swinmae_loss_curve.png`
+
+You can also view interactive curves with TensorBoard:
+
+```bash
+tensorboard --logdir runs
+```
+
 ## Colab GPU validation flow
 
 1. Open Colab and set runtime to GPU.

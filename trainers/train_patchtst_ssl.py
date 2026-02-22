@@ -10,7 +10,13 @@ from tqdm import tqdm
 from core.config import load_yaml_config, validate_required_keys
 from datasets.fdc_dataset import build_fdc_datasets
 from models.patchtst.patchtst_ssl import PatchTSTSSL
-from trainers.utils import get_device, make_writer, save_checkpoint, set_seed
+from trainers.utils import (
+    get_device,
+    make_writer,
+    save_checkpoint,
+    save_loss_history,
+    set_seed,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -148,9 +154,18 @@ def main() -> None:
     max_val_batches = int(config["training"].get("max_val_batches", 10**9))
 
     best_val = float("inf")
+    history: list[dict[str, float | int]] = []
     for epoch in range(1, epochs + 1):
         train_loss = train_one_epoch(model, train_loader, optimizer, device, use_amp, max_train_batches)
         val_loss = validate(model, val_loader, device, max_val_batches)
+
+        history.append(
+            {
+                "epoch": int(epoch),
+                "train_loss": float(train_loss),
+                "val_loss": float(val_loss),
+            }
+        )
 
         writer.add_scalar("loss/train", train_loss, epoch)
         writer.add_scalar("loss/val", val_loss, epoch)
@@ -172,6 +187,9 @@ def main() -> None:
             )
 
     writer.close()
+    csv_path, png_path = save_loss_history(stream="patchtst", history=history)
+    print(f"[PatchTST] loss history csv: {csv_path}")
+    print(f"[PatchTST] loss curve png: {png_path if png_path is not None else 'skipped (matplotlib not available)'}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import random
 from pathlib import Path
 from typing import Any
@@ -38,3 +39,51 @@ def save_checkpoint(path: str | Path, state: dict[str, Any]) -> None:
 
 def load_checkpoint(path: str | Path, map_location: str | torch.device = "cpu") -> dict[str, Any]:
     return torch.load(path, map_location=map_location)
+
+
+def save_loss_history(
+    *,
+    stream: str,
+    history: list[dict[str, float | int]],
+    output_dir: str | Path = "artifacts/loss",
+) -> tuple[Path, Path | None]:
+    """Persist epoch loss history as CSV and optional PNG curve."""
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    csv_path = out_dir / f"{stream}_loss_history.csv"
+    with csv_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["epoch", "train_loss", "val_loss"])
+        writer.writeheader()
+        for row in history:
+            writer.writerow(
+                {
+                    "epoch": int(row["epoch"]),
+                    "train_loss": float(row["train_loss"]),
+                    "val_loss": float(row["val_loss"]),
+                }
+            )
+
+    png_path: Path | None = out_dir / f"{stream}_loss_curve.png"
+    try:
+        import matplotlib.pyplot as plt  # Optional dependency at runtime.
+    except Exception:
+        return csv_path, None
+
+    epochs = [int(row["epoch"]) for row in history]
+    train_losses = [float(row["train_loss"]) for row in history]
+    val_losses = [float(row["val_loss"]) for row in history]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(epochs, train_losses, marker="o", label="train")
+    ax.plot(epochs, val_losses, marker="o", label="val")
+    ax.set_title(f"{stream.upper()} Loss Curve")
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(png_path, dpi=140)
+    plt.close(fig)
+
+    return csv_path, png_path

@@ -16,9 +16,20 @@
 - `ls -lh checkpoints/patchtst_ssl.pt checkpoints/swinmae_ssl.pt`
 - Confirm both files exist and have non-zero size.
 
+## Loss curve verification
+- `ls -lh artifacts/loss/*_loss_history.csv artifacts/loss/*_loss_curve.png`
+- Verify train/val loss curves are generated for each stream.
+- Optional interactive view: `tensorboard --logdir runs`
+
 ## Scoring example command
 - PatchTST: `python -m inference.run_scoring_example --stream patchtst --checkpoint checkpoints/patchtst_ssl.pt --config configs/patchtst_ssl.yaml`
 - SwinMAE: `python -m inference.run_scoring_example --stream swinmae --checkpoint checkpoints/swinmae_ssl.pt --config configs/swinmae_ssl.yaml`
+
+## Training completion checklist (automated)
+- Run: `python -m pipelines.validate_training_outputs`
+- Output format:
+  - `[v] PASS` or `[ ] FAIL` per checklist item.
+  - Summary with passed/failed counts.
 
 ## Local CUDA PC migration
 - Copy repo as-is.
