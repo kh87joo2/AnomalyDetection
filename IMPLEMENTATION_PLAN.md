@@ -32,7 +32,7 @@ The Ralph loop managed plan section is appended or updated automatically.
 - [x] P2: Implement P0 Runtime Data Export
 - [x] P3: Implement P0 Checklist and Metrics Panels
 - [x] P4: Implement P1 Run History and Comparison
-- [ ] P5: Implement P1 UX Polish
+- [x] P5: Implement P1 UX Polish
 
 ### Completed Baseline
 - [x] C1: Backup previous scope snapshot (`docs/archive/phase1_5_snapshot_2026-02-22/`)

@@ -51,6 +51,7 @@ const nodeLayer = document.getElementById("node-layer");
 const checklistSummaryEl = document.getElementById("checklist-summary");
 const checklistListEl = document.getElementById("checklist-list");
 const readinessGridEl = document.getElementById("readiness-grid");
+const quickLinksEl = document.getElementById("quick-links-list");
 const patchLossCanvasEl = document.getElementById("patchtst-loss-canvas");
 const swinLossCanvasEl = document.getElementById("swinmae-loss-canvas");
 const currentRunSelectEl = document.getElementById("current-run-select");
@@ -168,7 +169,8 @@ function renderLegend() {
         lineGroup,
         connections: getCurrentView().connections,
         nodeMap: state.nodeMap,
-        activeTypes: state.activeTypes
+        activeTypes: state.activeTypes,
+        runtimeNodes: state.runtime?.nodes || {}
       });
       setStatus(`Filter updated: ${meta.label}`);
     });
@@ -207,7 +209,8 @@ function renderView() {
     lineGroup,
     connections: view.connections,
     nodeMap: state.nodeMap,
-    activeTypes: state.activeTypes
+    activeTypes: state.activeTypes,
+    runtimeNodes: state.runtime?.nodes || {}
   });
 
   applyNodeStatuses(view);
@@ -262,7 +265,8 @@ function setupGraphInteractions() {
         lineGroup,
         connections: view.connections,
         nodeMap: state.nodeMap,
-        activeTypes: state.activeTypes
+        activeTypes: state.activeTypes,
+        runtimeNodes: state.runtime?.nodes || {}
       });
     },
     onTransform: applyTransform,
@@ -316,6 +320,7 @@ function renderRuntimePanels(runtimeState) {
     checklistSummaryEl,
     checklistListEl,
     readinessGridEl,
+    quickLinksEl,
     patchCanvasEl: patchLossCanvasEl,
     swinCanvasEl: swinLossCanvasEl
   });
@@ -481,6 +486,13 @@ async function applyRunSelection() {
   state.runtime = currentRuntime || state.runtimeLive;
   renderRuntimePanels(state.runtime);
   applyNodeStatuses(getCurrentView());
+  renderConnections({
+    lineGroup,
+    connections: getCurrentView().connections,
+    nodeMap: state.nodeMap,
+    activeTypes: state.activeTypes,
+    runtimeNodes: state.runtime?.nodes || {}
+  });
 
   const runtimeDate = state.runtime?.meta?.timestamp || state.layout.meta?.date || "";
   dateEl.textContent = formatDate(runtimeDate);

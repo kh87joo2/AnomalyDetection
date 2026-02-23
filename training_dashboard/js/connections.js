@@ -79,7 +79,31 @@ function createConnectionPath(className, d) {
   return path;
 }
 
-export function renderConnections({ lineGroup, connections, nodeMap, activeTypes }) {
+function deriveConnectionState(connection, runtimeNodes) {
+  if (!runtimeNodes) {
+    return "idle";
+  }
+
+  const sourceStatus = runtimeNodes[connection.from]?.status || "idle";
+  const targetStatus = runtimeNodes[connection.to]?.status || "idle";
+  const statuses = [sourceStatus, targetStatus];
+
+  if (statuses.includes("fail")) {
+    return "fail";
+  }
+  if (statuses.includes("running")) {
+    return "running";
+  }
+  if (sourceStatus === "done" && targetStatus === "done") {
+    return "done";
+  }
+  if (statuses.includes("done")) {
+    return "running";
+  }
+  return "idle";
+}
+
+export function renderConnections({ lineGroup, connections, nodeMap, activeTypes, runtimeNodes }) {
   const fragment = document.createDocumentFragment();
 
   for (const connection of connections) {
@@ -94,9 +118,12 @@ export function renderConnections({ lineGroup, connections, nodeMap, activeTypes
       activeTypes &&
       (!activeTypes.has(source.type) || !activeTypes.has(target.type));
     const d = getBezierPath(source, target);
+    const flowState = deriveConnectionState(connection, runtimeNodes);
 
     const echo = createConnectionPath("connection-line echo", d);
     const main = createConnectionPath("connection-line", d);
+    echo.dataset.state = flowState;
+    main.dataset.state = flowState;
 
     if (hidden) {
       echo.classList.add("is-hidden");

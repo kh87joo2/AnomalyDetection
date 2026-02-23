@@ -357,6 +357,60 @@ h1 {
   color: #9fd3ff;
 }
 
+.quick-links-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+.quick-link-row {
+  border: 1px solid rgba(104, 145, 220, 0.34);
+  border-radius: 8px;
+  background: rgba(10, 20, 41, 0.9);
+  padding: 7px 8px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.quick-link-row[data-state="ready"] {
+  border-color: rgba(114, 243, 186, 0.55);
+}
+
+.quick-link-row[data-state="missing"] {
+  border-color: rgba(255, 121, 150, 0.58);
+}
+
+.quick-link-label {
+  margin: 0;
+  color: rgba(191, 208, 236, 0.95);
+  font: 600 0.64rem "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.quick-link-anchor {
+  display: block;
+  margin: 0;
+  color: #93ddff;
+  text-decoration: underline;
+  text-decoration-color: rgba(147, 221, 255, 0.5);
+  text-underline-offset: 2px;
+  font: 500 0.69rem "IBM Plex Mono", monospace;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.quick-link-anchor:hover {
+  color: #cef2ff;
+}
+
+.quick-link-anchor.is-disabled {
+  color: rgba(146, 167, 201, 0.72);
+  text-decoration: none;
+}
+
 .readiness-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -534,5 +588,68 @@ h1 {
   .bottom-bar {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow: auto;
+  }
+
+  .app-shell {
+    height: auto;
+    min-height: 100dvh;
+    gap: 10px;
+    padding: 10px;
+    overflow: visible;
+  }
+
+  .top-bar {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  h1 {
+    font-size: clamp(1.1rem, 6vw, 1.45rem);
+  }
+
+  .workspace {
+    height: auto;
+    overflow: visible;
+  }
+
+  .workspace-grid {
+    height: auto;
+    overflow: visible;
+    gap: 10px;
+  }
+
+  .canvas-wrapper {
+    min-height: 58vh;
+  }
+
+  .insight-panel {
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .checklist-list {
+    max-height: 240px;
+  }
+
+  .comparison-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .loss-card canvas {
+    height: 124px;
+  }
+
+  .bottom-bar {
+    gap: 8px;
+    padding: 9px 10px;
   }
 }

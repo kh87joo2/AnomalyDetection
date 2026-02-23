@@ -158,11 +158,149 @@ function drawLossChart(canvas, series) {
   ctx.fillRect(pad.left + 80, height - 14, 10, 2);
 }
 
+function normalizePath(pathValue) {
+  if (typeof pathValue !== "string") {
+    return "";
+  }
+  return pathValue.trim();
+}
+
+function toHref(pathValue, repoRoot) {
+  const raw = normalizePath(pathValue);
+  if (!raw) {
+    return "";
+  }
+
+  if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("file://")) {
+    return raw;
+  }
+
+  let normalized = raw.replace(/\\/g, "/");
+  const root = normalizePath(repoRoot).replace(/\\/g, "/");
+  if (root && normalized.startsWith(root)) {
+    normalized = normalized.slice(root.length).replace(/^\/+/, "");
+  }
+
+  if (!normalized) {
+    return "";
+  }
+
+  if (normalized.startsWith("training_dashboard/")) {
+    return `./${normalized.slice("training_dashboard/".length)}`;
+  }
+  if (normalized.startsWith("data/")) {
+    return `./${normalized}`;
+  }
+  if (normalized.startsWith("./") || normalized.startsWith("../")) {
+    return normalized;
+  }
+  if (normalized.startsWith("/")) {
+    return normalized;
+  }
+  return `../${normalized}`;
+}
+
+function createQuickLinkRow({ label, path, exists }, repoRoot) {
+  const row = document.createElement("article");
+  row.className = "quick-link-row";
+  const knownExists = typeof exists === "boolean";
+  row.dataset.state = !knownExists ? "unknown" : exists ? "ready" : "missing";
+
+  const title = document.createElement("p");
+  title.className = "quick-link-label";
+  title.textContent = label;
+
+  const rawPath = normalizePath(path);
+  const href = toHref(rawPath, repoRoot);
+
+  let valueNode;
+  if (href) {
+    const link = document.createElement("a");
+    link.className = "quick-link-anchor";
+    link.href = href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = rawPath;
+    valueNode = link;
+  } else {
+    const placeholder = document.createElement("span");
+    placeholder.className = "quick-link-anchor is-disabled";
+    placeholder.textContent = rawPath || "path unavailable";
+    valueNode = placeholder;
+  }
+
+  row.append(title, valueNode);
+  return row;
+}
+
+function buildQuickLinks(runtimeState) {
+  const artifacts = runtimeState?.artifacts || {};
+  const links = [
+    {
+      label: "dashboard state",
+      path: "training_dashboard/data/dashboard-state.json",
+      exists: true,
+    },
+    {
+      label: "run index",
+      path: "training_dashboard/data/runs/index.json",
+      exists: true,
+    },
+    {
+      label: "patchtst checkpoint",
+      path: artifacts?.checkpoints?.patchtst?.path,
+      exists: artifacts?.checkpoints?.patchtst?.exists,
+    },
+    {
+      label: "swinmae checkpoint",
+      path: artifacts?.checkpoints?.swinmae?.path,
+      exists: artifacts?.checkpoints?.swinmae?.exists,
+    },
+    {
+      label: "scaler artifact",
+      path: artifacts?.scaler?.path,
+      exists: artifacts?.scaler?.exists,
+    },
+    {
+      label: "patchtst logs",
+      path: artifacts?.logs?.patchtst?.path,
+      exists: artifacts?.logs?.patchtst?.exists,
+    },
+    {
+      label: "swinmae logs",
+      path: artifacts?.logs?.swinmae?.path,
+      exists: artifacts?.logs?.swinmae?.exists,
+    },
+  ];
+
+  if (Array.isArray(artifacts?.backup?.files) && artifacts.backup.files.length > 0) {
+    const firstBundle = artifacts.backup.files[0];
+    links.push({
+      label: "backup bundle",
+      path: firstBundle?.path,
+      exists: true,
+    });
+  }
+
+  const dedupe = new Set();
+  return links
+    .filter((item) => normalizePath(item.path))
+    .filter((item) => {
+      const key = `${item.label}::${normalizePath(item.path)}`;
+      if (dedupe.has(key)) {
+        return false;
+      }
+      dedupe.add(key);
+      return true;
+    });
+}
+
 export function renderDashboardPanels({
   runtimeState,
   checklistSummaryEl,
   checklistListEl,
   readinessGridEl,
+  quickLinksEl,
   patchCanvasEl,
   swinCanvasEl
 }) {
@@ -187,6 +325,23 @@ export function renderDashboardPanels({
     readyFragment.appendChild(createReadinessCard(label, Boolean(readiness[key])));
   });
   readinessGridEl.replaceChildren(readyFragment);
+
+  if (quickLinksEl) {
+    const repoRoot = runtimeState?.meta?.repo_root || "";
+    const quickLinks = buildQuickLinks(runtimeState);
+    if (quickLinks.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "panel-empty";
+      empty.textContent = "No quick links available.";
+      quickLinksEl.replaceChildren(empty);
+    } else {
+      const quickLinksFragment = document.createDocumentFragment();
+      quickLinks.forEach((item) => {
+        quickLinksFragment.appendChild(createQuickLinkRow(item, repoRoot));
+      });
+      quickLinksEl.replaceChildren(quickLinksFragment);
+    }
+  }
 
   drawLossChart(patchCanvasEl, runtimeState?.metrics?.patchtst?.loss || []);
   drawLossChart(swinCanvasEl, runtimeState?.metrics?.swinmae?.loss || []);
