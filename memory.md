@@ -301,3 +301,67 @@
    - Finalize status animation by node state.
    - Add quick links to artifact/log paths.
    - Confirm mobile-safe layout behavior.
+
+## 17) Continuation update - 2026-02-23 (T03/T04/T05 completion + verification)
+- Phase 2 dashboard execution status:
+  - T03 (Checklist and Metrics Panels): completed.
+  - T04 (Run History and Comparison): completed.
+  - T05 (UX Polish): completed.
+  - `IMPLEMENTATION_PLAN.md` Priority Queue now shows P1~P5 all checked.
+- T03 completion details:
+  - Added right-side dashboard panels and runtime binding.
+  - Checklist rows now render compactly (title row only), with detail/hint preserved as tooltip metadata.
+  - Readiness and loss panels render from `dashboard-state.json`.
+  - Scroll/overflow behavior fixed for checklist/panel visibility.
+- T04 completion details:
+  - Extended exporter for run snapshot persistence:
+    - `--persist-run-history`
+    - `--run-history-dir` (default `training_dashboard/data/runs`)
+    - `--run-history-limit` (default `20`)
+  - Added run-id normalization rule:
+    - allowed chars: `[a-zA-Z0-9._-]`
+    - others replaced with `_`
+  - Added run history artifacts:
+    - per-run snapshot: `training_dashboard/data/runs/<run_id>.json`
+    - index: `training_dashboard/data/runs/index.json`
+  - Added dashboard run comparison panel:
+    - current/baseline selectors
+    - checklist pass delta
+    - PatchTST final val loss delta
+    - SwinMAE final val loss delta
+  - Added tests:
+    - `tests/pipelines/test_dashboard_run_history.py`
+- T05 completion details:
+  - Added status-synced line animation in `training_dashboard/css/animations.css`:
+    - connection states: `idle/running/done/fail`
+    - node states: `idle/running/done/fail`
+  - Added Quick Links panel:
+    - links generated from runtime artifact paths (checkpoints/scaler/logs/run-index/etc)
+  - Added mobile fallback tuning (`<=768px`) in `training_dashboard/css/main.css`.
+- Colab verification outcome for T04:
+  - Generated two run snapshots:
+    - `colab_run_a.json`
+    - `colab_run_b.json`
+  - `index.json` confirmed two runs with `7/7` checklist pass.
+  - Final validation losses in index:
+    - PatchTST: `21.153209686279297`
+    - SwinMAE: `1.0077273845672607`
+  - Backend delta check printed:
+    - checklist delta: `0`
+    - patchtst val delta: `0.0`
+    - swinmae val delta: `0.0`
+    - `T04 backend PASS`
+- Runtime/UI notes:
+  - Colab+VSCode forwarded-port path showed intermittent access issues (`localhost`/proxy routing mismatch) despite server `HTTP 200` from runtime.
+  - This was a serving/path issue, not a data/export logic issue.
+  - Functional verification was completed through generated artifacts + backend checks.
+
+## 18) Git/branch state snapshot - 2026-02-23
+- Dashboard-related commits now include:
+  - `e989e51` feat(training-dashboard): implement t03 checklist and metrics panels
+  - `d19ffda` fix(training-dashboard): improve checklist panel scrolling and compact checklist rows
+  - `652ef68` feat(training-dashboard): implement run history export and comparison panel
+  - `7273bf9` feat(training-dashboard): complete t05 ux polish
+- Current local note:
+  - `notebooks/colab_swinmae_ssl.ipynb` has local modifications and was intentionally left out of dashboard commits.
+  - Latest dashboard commit (`7273bf9`) should be pushed by user to synchronize `origin/main`.
