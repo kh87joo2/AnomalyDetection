@@ -27,17 +27,18 @@ function createChecklistRow(item) {
   title.className = "check-item-title";
   title.textContent = `${item.index}. ${mark} ${state} - ${item.title}`;
 
-  const detail = document.createElement("p");
-  detail.className = "check-item-detail";
-  detail.textContent = item.detail || "-";
+  row.append(title);
 
-  row.append(title, detail);
-
+  // Keep detail/hint as tooltip metadata without rendering extra text lines.
+  const tooltipParts = [];
+  if (item.detail) {
+    tooltipParts.push(`detail: ${item.detail}`);
+  }
   if (item.hint) {
-    const hint = document.createElement("p");
-    hint.className = "check-item-hint";
-    hint.textContent = `hint: ${item.hint}`;
-    row.appendChild(hint);
+    tooltipParts.push(`hint: ${item.hint}`);
+  }
+  if (tooltipParts.length > 0) {
+    row.title = tooltipParts.join("\n");
   }
 
   return row;
