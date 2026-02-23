@@ -11,9 +11,9 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main.css?v=20260223f" />
-    <link rel="stylesheet" href="css/nodes.css?v=20260223f" />
-    <link rel="stylesheet" href="css/animations.css?v=20260223f" />
+    <link rel="stylesheet" href="css/main.css?v=20260223g" />
+    <link rel="stylesheet" href="css/nodes.css?v=20260223g" />
+    <link rel="stylesheet" href="css/animations.css?v=20260223g" />
   </head>
   <body>
     <div class="app-shell">
@@ -49,6 +49,61 @@
           </section>
 
           <aside class="insight-panel" aria-label="Checklist and metrics panel">
+            <section class="panel-card">
+              <div class="panel-header">
+                <h2>Local Train Runner</h2>
+                <span id="train-job-state" class="panel-badge" data-state="idle">IDLE</span>
+              </div>
+              <div class="trainer-grid">
+                <div class="trainer-row">
+                  <label class="trainer-label" for="patch-file-input">PatchTST data</label>
+                  <input
+                    id="patch-file-input"
+                    class="trainer-file-input"
+                    type="file"
+                    multiple
+                    accept=".csv,.parquet,.pq,.zip"
+                  />
+                  <button id="patch-upload-btn" class="trainer-btn" type="button">
+                    Import PatchTST
+                  </button>
+                  <p id="patch-upload-note" class="trainer-note">No PatchTST files imported.</p>
+                </div>
+
+                <div class="trainer-row">
+                  <label class="trainer-label" for="swin-file-input">SwinMAE data</label>
+                  <input
+                    id="swin-file-input"
+                    class="trainer-file-input"
+                    type="file"
+                    multiple
+                    accept=".csv,.npy,.zip"
+                  />
+                  <button id="swin-upload-btn" class="trainer-btn" type="button">
+                    Import SwinMAE
+                  </button>
+                  <p id="swin-upload-note" class="trainer-note">No SwinMAE files imported.</p>
+                </div>
+              </div>
+
+              <div class="trainer-actions">
+                <button id="train-run-btn" class="trainer-btn trainer-btn-primary" type="button">
+                  Train
+                </button>
+                <button id="train-refresh-btn" class="trainer-btn" type="button">
+                  Refresh Status
+                </button>
+                <button id="train-stop-btn" class="trainer-btn trainer-btn-danger" type="button">
+                  Stop
+                </button>
+              </div>
+
+              <p id="train-job-note" class="trainer-note">
+                Import PatchTST and SwinMAE files, then press Train.
+              </p>
+              <pre id="train-job-log" class="trainer-log">No logs yet.</pre>
+            </section>
+
             <section class="panel-card">
               <div class="panel-header">
                 <h2>Validation Checklist</h2>
@@ -116,6 +171,6 @@
       </footer>
     </div>
 
-    <script type="module" src="js/app.js?v=20260223f"></script>
+    <script type="module" src="js/app.js?v=20260223g"></script>
   </body>
 </html>

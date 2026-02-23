@@ -223,10 +223,134 @@ h1 {
   background: rgba(27, 83, 111, 0.36);
 }
 
+.panel-badge[data-state="running"],
+.panel-badge[data-state="stopping"] {
+  color: #fff4d8;
+  border-color: rgba(255, 205, 99, 0.65);
+  background: rgba(121, 78, 10, 0.36);
+}
+
+.panel-badge[data-state="success"] {
+  color: #dffff2;
+  border-color: rgba(114, 243, 186, 0.72);
+  background: rgba(17, 91, 61, 0.34);
+}
+
+.panel-badge[data-state="failed"] {
+  color: #ffe7ef;
+  border-color: rgba(255, 123, 143, 0.72);
+  background: rgba(118, 30, 53, 0.35);
+}
+
+.panel-badge[data-state="offline"] {
+  color: #d7deee;
+  border-color: rgba(134, 153, 186, 0.6);
+  background: rgba(30, 41, 65, 0.52);
+}
+
 .panel-empty {
   margin: 0;
   color: rgba(163, 183, 220, 0.96);
   font-size: 0.75rem;
+}
+
+.trainer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.trainer-row {
+  border: 1px solid rgba(101, 141, 219, 0.32);
+  border-radius: 9px;
+  background: rgba(9, 18, 36, 0.88);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.trainer-label {
+  font: 600 0.64rem "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(167, 187, 222, 0.95);
+}
+
+.trainer-file-input {
+  width: 100%;
+  color: #deebff;
+  font: 500 0.68rem "IBM Plex Mono", monospace;
+}
+
+.trainer-file-input::file-selector-button {
+  margin-right: 8px;
+  border: 1px solid rgba(104, 145, 220, 0.5);
+  border-radius: 8px;
+  background: rgba(13, 22, 44, 0.95);
+  color: #eaf4ff;
+  font: 500 0.66rem "IBM Plex Mono", monospace;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.trainer-btn {
+  border: 1px solid rgba(104, 145, 220, 0.52);
+  border-radius: 8px;
+  background: rgba(13, 22, 44, 0.95);
+  color: #e7f2ff;
+  font: 600 0.68rem "IBM Plex Mono", monospace;
+  padding: 6px 9px;
+  cursor: pointer;
+  transition: 150ms ease;
+}
+
+.trainer-btn:hover:not(:disabled) {
+  border-color: rgba(120, 225, 255, 0.88);
+  box-shadow: 0 0 16px rgba(52, 174, 255, 0.25);
+}
+
+.trainer-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.trainer-btn-primary {
+  border-color: rgba(114, 243, 186, 0.68);
+  background: rgba(15, 69, 49, 0.76);
+}
+
+.trainer-btn-danger {
+  border-color: rgba(255, 123, 143, 0.72);
+  background: rgba(102, 24, 45, 0.78);
+}
+
+.trainer-actions {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.trainer-note {
+  margin: 0;
+  color: rgba(163, 183, 220, 0.96);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.trainer-log {
+  margin: 8px 0 0;
+  border: 1px solid rgba(88, 126, 206, 0.4);
+  border-radius: 9px;
+  background: rgba(7, 14, 28, 0.94);
+  color: #d3e7ff;
+  font: 500 0.66rem/1.4 "IBM Plex Mono", monospace;
+  min-height: 88px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 8px;
+  white-space: pre-wrap;
 }
 
 .checklist-list {
@@ -646,6 +770,10 @@ h1 {
 
   .loss-card canvas {
     height: 124px;
+  }
+
+  .trainer-actions {
+    grid-template-columns: 1fr;
   }
 
   .bottom-bar {

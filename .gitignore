@@ -9,3 +9,4 @@ checkpoints/
 artifacts/
 runs/
 training_dashboard/data/dashboard-state.json
+training_dashboard/uploads/

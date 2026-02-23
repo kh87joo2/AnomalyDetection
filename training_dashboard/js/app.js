@@ -30,6 +30,10 @@ const state = {
   activeTypes: new Set(Object.keys(TYPE_META)),
   nodeMap: new Map(),
   nodeElements: new Map(),
+  trainerPollId: null,
+  trainerApiAvailable: true,
+  trainerLiveNodes: null,
+  lastTrainerCompletion: "",
   transform: {
     x: 70,
     y: 50,
@@ -58,6 +62,18 @@ const currentRunSelectEl = document.getElementById("current-run-select");
 const baselineRunSelectEl = document.getElementById("baseline-run-select");
 const comparisonMetricsEl = document.getElementById("comparison-metrics");
 const comparisonNoteEl = document.getElementById("comparison-note");
+const trainJobStateEl = document.getElementById("train-job-state");
+const patchFileInputEl = document.getElementById("patch-file-input");
+const patchUploadBtnEl = document.getElementById("patch-upload-btn");
+const patchUploadNoteEl = document.getElementById("patch-upload-note");
+const swinFileInputEl = document.getElementById("swin-file-input");
+const swinUploadBtnEl = document.getElementById("swin-upload-btn");
+const swinUploadNoteEl = document.getElementById("swin-upload-note");
+const trainRunBtnEl = document.getElementById("train-run-btn");
+const trainRefreshBtnEl = document.getElementById("train-refresh-btn");
+const trainStopBtnEl = document.getElementById("train-stop-btn");
+const trainJobNoteEl = document.getElementById("train-job-note");
+const trainJobLogEl = document.getElementById("train-job-log");
 
 const { lineGroup } = setupConnectionLayer(connectionLayer);
 const LIVE_RUN_KEY = "__live__";
@@ -72,6 +88,91 @@ function getCurrentView() {
 
 function setStatus(text) {
   statusEl.textContent = text;
+}
+
+function setTrainNote(text) {
+  if (!trainJobNoteEl) {
+    return;
+  }
+  trainJobNoteEl.textContent = text;
+}
+
+function setTrainControlsEnabled(enabled) {
+  [
+    patchFileInputEl,
+    patchUploadBtnEl,
+    swinFileInputEl,
+    swinUploadBtnEl,
+    trainRunBtnEl,
+    trainStopBtnEl
+  ].forEach((element) => {
+    if (element) {
+      element.disabled = !enabled;
+    }
+  });
+  if (trainRefreshBtnEl) {
+    trainRefreshBtnEl.disabled = false;
+  }
+}
+
+function setTrainStateBadge(stateName) {
+  if (!trainJobStateEl) {
+    return;
+  }
+  const normalized = typeof stateName === "string" ? stateName : "idle";
+  trainJobStateEl.dataset.state = normalized;
+  trainJobStateEl.textContent = normalized.toUpperCase();
+}
+
+async function requestJson(path, options = {}) {
+  const response = await fetch(path, options);
+  const text = await response.text();
+
+  let payload = {};
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch (error) {
+      payload = { message: text };
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      payload?.error || payload?.message || `Request failed (${response.status} ${response.statusText})`;
+    throw new Error(message);
+  }
+
+  return payload;
+}
+
+function getEffectiveRuntimeNodes() {
+  const baseNodes = state.runtime?.nodes && typeof state.runtime.nodes === "object"
+    ? state.runtime.nodes
+    : {};
+  const liveNodes = state.trainerLiveNodes;
+  if (!liveNodes || typeof liveNodes !== "object") {
+    return baseNodes;
+  }
+  return {
+    ...baseNodes,
+    ...liveNodes
+  };
+}
+
+function refreshNodeStatusView() {
+  if (!state.layout || !Array.isArray(state.layout.views) || state.layout.views.length === 0) {
+    return;
+  }
+  const view = getCurrentView();
+  applyNodeStatuses(view);
+  renderConnections({
+    lineGroup,
+    connections: view.connections,
+    nodeMap: state.nodeMap,
+    activeTypes: state.activeTypes,
+    runtimeNodes: getEffectiveRuntimeNodes()
+  });
 }
 
 function applyTransform() {
@@ -170,7 +271,7 @@ function renderLegend() {
         connections: getCurrentView().connections,
         nodeMap: state.nodeMap,
         activeTypes: state.activeTypes,
-        runtimeNodes: state.runtime?.nodes || {}
+        runtimeNodes: getEffectiveRuntimeNodes()
       });
       setStatus(`Filter updated: ${meta.label}`);
     });
@@ -210,14 +311,14 @@ function renderView() {
     connections: view.connections,
     nodeMap: state.nodeMap,
     activeTypes: state.activeTypes,
-    runtimeNodes: state.runtime?.nodes || {}
+    runtimeNodes: getEffectiveRuntimeNodes()
   });
 
   applyNodeStatuses(view);
 }
 
 function applyNodeStatuses(view) {
-  const nodeStates = state.runtime?.nodes || {};
+  const nodeStates = getEffectiveRuntimeNodes();
   view.nodes.forEach((node) => {
     const element = state.nodeElements.get(node.id);
     if (!element) {
@@ -266,7 +367,7 @@ function setupGraphInteractions() {
         connections: view.connections,
         nodeMap: state.nodeMap,
         activeTypes: state.activeTypes,
-        runtimeNodes: state.runtime?.nodes || {}
+        runtimeNodes: getEffectiveRuntimeNodes()
       });
     },
     onTransform: applyTransform,
@@ -324,6 +425,259 @@ function renderRuntimePanels(runtimeState) {
     patchCanvasEl: patchLossCanvasEl,
     swinCanvasEl: swinLossCanvasEl
   });
+}
+
+function summarizeUploadStream(streamPayload, fallbackText) {
+  if (!streamPayload || typeof streamPayload !== "object") {
+    return fallbackText;
+  }
+  const count = Number(streamPayload.count || 0);
+  if (count <= 0) {
+    return fallbackText;
+  }
+
+  const files = Array.isArray(streamPayload.files) ? streamPayload.files : [];
+  const names = files.slice(0, 2).map((item) => item?.name).filter(Boolean);
+  if (names.length === 0) {
+    return `${count} file(s) imported`;
+  }
+  const suffix = count > names.length ? ` +${count - names.length} more` : "";
+  return `${count} file(s): ${names.join(", ")}${suffix}`;
+}
+
+function setTrainerUnavailable(message) {
+  state.trainerApiAvailable = false;
+  state.trainerLiveNodes = null;
+  stopTrainerPolling();
+  setTrainControlsEnabled(false);
+  setTrainStateBadge("offline");
+  setTrainNote(message);
+  if (trainJobLogEl) {
+    trainJobLogEl.textContent = "Training API unavailable.";
+  }
+  refreshNodeStatusView();
+}
+
+async function refreshRuntimeFromFiles() {
+  state.runtimeLive = await loadRuntimeData();
+  state.runtime = state.runtimeLive;
+  state.trainerLiveNodes = null;
+  state.runSnapshots.clear();
+  await initRunComparisonPanel();
+  refreshNodeStatusView();
+  renderRuntimePanels(state.runtime);
+}
+
+function stopTrainerPolling() {
+  if (state.trainerPollId !== null) {
+    window.clearInterval(state.trainerPollId);
+    state.trainerPollId = null;
+  }
+}
+
+function startTrainerPolling() {
+  if (state.trainerPollId !== null) {
+    return;
+  }
+  state.trainerPollId = window.setInterval(() => {
+    refreshTrainerStatus().catch((error) => {
+      console.error(error);
+    });
+  }, 3000);
+}
+
+function renderTrainerStatus(payload) {
+  const job = payload?.job || {};
+  const uploads = payload?.uploads || {};
+  const liveNodes =
+    job.live_nodes && typeof job.live_nodes === "object" ? job.live_nodes : null;
+
+  state.trainerApiAvailable = true;
+  setTrainControlsEnabled(true);
+  setTrainStateBadge(job.state || "idle");
+
+  if (patchUploadNoteEl) {
+    patchUploadNoteEl.textContent = summarizeUploadStream(
+      uploads.patchtst,
+      "No PatchTST files imported."
+    );
+  }
+  if (swinUploadNoteEl) {
+    swinUploadNoteEl.textContent = summarizeUploadStream(
+      uploads.swinmae,
+      "No SwinMAE files imported."
+    );
+  }
+
+  if (trainJobNoteEl) {
+    const runId = job.run_id ? ` run_id=${job.run_id}` : "";
+    const stepTag =
+      job.active_step && job.step_index && job.step_total
+        ? ` | step ${job.step_index}/${job.step_total}: ${job.active_step}`
+        : "";
+    trainJobNoteEl.textContent = `${job.message || "Idle"}${runId}${stepTag}`;
+  }
+
+  if (trainJobLogEl) {
+    const lines = Array.isArray(job.log_tail) ? job.log_tail : [];
+    trainJobLogEl.textContent = lines.length > 0 ? lines.join("\n") : "No logs yet.";
+  }
+
+  if (job.state === "running" || job.state === "stopping" || job.state === "failed") {
+    state.trainerLiveNodes = liveNodes;
+  } else if (job.state === "success") {
+    state.trainerLiveNodes = liveNodes;
+  } else {
+    state.trainerLiveNodes = null;
+  }
+  refreshNodeStatusView();
+
+  if (job.state === "running" || job.state === "stopping") {
+    startTrainerPolling();
+  } else {
+    stopTrainerPolling();
+  }
+
+  const completionToken = `${job.state || ""}:${job.finished_at || ""}:${job.run_id || ""}`;
+  if (
+    (job.state === "success" || job.state === "failed") &&
+    completionToken &&
+    completionToken !== state.lastTrainerCompletion
+  ) {
+    state.lastTrainerCompletion = completionToken;
+    if (job.state === "success") {
+      refreshRuntimeFromFiles()
+        .then(() => {
+          setStatus("Training completed and dashboard data refreshed.");
+        })
+        .catch((error) => {
+          console.error(error);
+          setStatus("Training completed but dashboard refresh failed.");
+        });
+    } else {
+      setStatus("Training failed. Check runner log panel.");
+    }
+  }
+}
+
+async function refreshTrainerStatus() {
+  if (!trainJobStateEl) {
+    return;
+  }
+  try {
+    const payload = await requestJson("/api/status", { cache: "no-store" });
+    renderTrainerStatus(payload);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setTrainerUnavailable(
+      `Training API unavailable. Start server: python3 -m training_dashboard.server (${message})`
+    );
+  }
+}
+
+async function uploadStreamData(stream, inputEl) {
+  const files = Array.from(inputEl?.files || []);
+  if (files.length === 0) {
+    setTrainNote(`Select ${stream} files before import.`);
+    return;
+  }
+
+  const formData = new FormData();
+  files.forEach((file) => formData.append("files", file));
+  const payload = await requestJson(`/api/upload?stream=${stream}&replace=1`, {
+    method: "POST",
+    body: formData
+  });
+  if (inputEl) {
+    inputEl.value = "";
+  }
+  renderTrainerStatus(payload);
+  setStatus(`${stream} files imported (${files.length})`);
+}
+
+async function startTrainingFromDashboard() {
+  const payload = await requestJson("/api/train", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      persist_run_history: true,
+      validate_skip_smoke: true
+    })
+  });
+  renderTrainerStatus(payload);
+  setStatus("Training started from dashboard.");
+}
+
+async function stopTrainingFromDashboard() {
+  const payload = await requestJson("/api/stop", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: "{}"
+  });
+  renderTrainerStatus(payload);
+  setStatus("Stop requested.");
+}
+
+async function initTrainingControls() {
+  if (!trainJobStateEl) {
+    return;
+  }
+
+  if (patchUploadBtnEl) {
+    patchUploadBtnEl.addEventListener("click", () => {
+      uploadStreamData("patchtst", patchFileInputEl).catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setTrainNote(message);
+        setStatus("PatchTST import failed.");
+      });
+    });
+  }
+
+  if (swinUploadBtnEl) {
+    swinUploadBtnEl.addEventListener("click", () => {
+      uploadStreamData("swinmae", swinFileInputEl).catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setTrainNote(message);
+        setStatus("SwinMAE import failed.");
+      });
+    });
+  }
+
+  if (trainRunBtnEl) {
+    trainRunBtnEl.addEventListener("click", () => {
+      startTrainingFromDashboard().catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setTrainNote(message);
+        setStatus("Training start failed.");
+      });
+    });
+  }
+
+  if (trainStopBtnEl) {
+    trainStopBtnEl.addEventListener("click", () => {
+      stopTrainingFromDashboard().catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setTrainNote(message);
+        setStatus("Stop request failed.");
+      });
+    });
+  }
+
+  if (trainRefreshBtnEl) {
+    trainRefreshBtnEl.addEventListener("click", () => {
+      refreshTrainerStatus().catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setTrainNote(message);
+        setStatus("Status refresh failed.");
+      });
+    });
+  }
+
+  await refreshTrainerStatus();
 }
 
 function checklistPassedCount(runtimeState) {
@@ -485,14 +839,7 @@ async function applyRunSelection() {
 
   state.runtime = currentRuntime || state.runtimeLive;
   renderRuntimePanels(state.runtime);
-  applyNodeStatuses(getCurrentView());
-  renderConnections({
-    lineGroup,
-    connections: getCurrentView().connections,
-    nodeMap: state.nodeMap,
-    activeTypes: state.activeTypes,
-    runtimeNodes: state.runtime?.nodes || {}
-  });
+  refreshNodeStatusView();
 
   const runtimeDate = state.runtime?.meta?.timestamp || state.layout.meta?.date || "";
   dateEl.textContent = formatDate(runtimeDate);
@@ -544,18 +891,18 @@ async function initRunComparisonPanel() {
   currentRunSelectEl.disabled = false;
   baselineRunSelectEl.disabled = baselineOptions.length === 0;
 
-  currentRunSelectEl.addEventListener("change", () => {
+  currentRunSelectEl.onchange = () => {
     applyRunSelection().catch((error) => {
       setStatus("Failed to load selected current run.");
       console.error(error);
     });
-  });
-  baselineRunSelectEl.addEventListener("change", () => {
+  };
+  baselineRunSelectEl.onchange = () => {
     applyRunSelection().catch((error) => {
       setStatus("Failed to load selected baseline run.");
       console.error(error);
     });
-  });
+  };
 
   await applyRunSelection();
 }
@@ -585,6 +932,7 @@ async function init() {
     applyTransform();
     setupGraphInteractions();
     await initRunComparisonPanel();
+    await initTrainingControls();
     const checklistCount = state.runtime?.checklist?.length || 0;
     if (checklistCount > 0) {
       const passed = state.runtime.checklist.filter((item) => item.passed).length;
