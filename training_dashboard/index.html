@@ -35,17 +35,52 @@
       </header>
 
       <main class="workspace">
-        <section
-          id="canvas-wrapper"
-          class="canvas-wrapper"
-          aria-label="Interactive graph canvas"
-        >
-          <div id="graph-viewport" class="graph-viewport">
-            <div id="group-layer" class="group-layer"></div>
-            <svg id="connection-layer" class="connection-layer" aria-hidden="true"></svg>
-            <div id="node-layer" class="node-layer"></div>
-          </div>
-        </section>
+        <div class="workspace-grid">
+          <section
+            id="canvas-wrapper"
+            class="canvas-wrapper"
+            aria-label="Interactive graph canvas"
+          >
+            <div id="graph-viewport" class="graph-viewport">
+              <div id="group-layer" class="group-layer"></div>
+              <svg id="connection-layer" class="connection-layer" aria-hidden="true"></svg>
+              <div id="node-layer" class="node-layer"></div>
+            </div>
+          </section>
+
+          <aside class="insight-panel" aria-label="Checklist and metrics panel">
+            <section class="panel-card">
+              <div class="panel-header">
+                <h2>Validation Checklist</h2>
+                <span id="checklist-summary" class="panel-badge">-/-</span>
+              </div>
+              <div id="checklist-list" class="checklist-list"></div>
+            </section>
+
+            <section class="panel-card">
+              <div class="panel-header">
+                <h2>Readiness</h2>
+              </div>
+              <div id="readiness-grid" class="readiness-grid"></div>
+            </section>
+
+            <section class="panel-card">
+              <div class="panel-header">
+                <h2>Loss Trends</h2>
+              </div>
+              <div class="loss-grid">
+                <article class="loss-card">
+                  <h3>PatchTST</h3>
+                  <canvas id="patchtst-loss-canvas" width="320" height="140"></canvas>
+                </article>
+                <article class="loss-card">
+                  <h3>SwinMAE</h3>
+                  <canvas id="swinmae-loss-canvas" width="320" height="140"></canvas>
+                </article>
+              </div>
+            </section>
+          </aside>
+        </div>
       </main>
 
       <footer class="bottom-bar">

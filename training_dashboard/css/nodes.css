@@ -21,6 +21,25 @@
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
+.node-card[data-status="idle"] {
+  box-shadow: 0 0 0 1px rgba(114, 149, 214, 0.24), 0 12px 24px rgba(3, 6, 16, 0.55);
+}
+
+.node-card[data-status="running"] {
+  border-color: rgba(108, 236, 255, 0.95);
+  box-shadow: 0 0 0 1px rgba(98, 232, 255, 0.55), 0 0 26px rgba(62, 207, 255, 0.42);
+}
+
+.node-card[data-status="done"] {
+  border-color: rgba(133, 246, 196, 0.94);
+  box-shadow: 0 0 0 1px rgba(114, 243, 186, 0.55), 0 0 24px rgba(54, 176, 129, 0.34);
+}
+
+.node-card[data-status="fail"] {
+  border-color: rgba(255, 124, 152, 0.95);
+  box-shadow: 0 0 0 1px rgba(255, 123, 143, 0.58), 0 0 24px rgba(186, 66, 96, 0.34);
+}
+
 .node-card:hover {
   transform: translateY(-2px);
   border-color: rgba(132, 223, 255, 0.9);

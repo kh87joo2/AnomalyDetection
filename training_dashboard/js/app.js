@@ -11,6 +11,7 @@ import {
   renderConnections
 } from "./connections.js";
 import { setupInteractions } from "./drag.js";
+import { renderDashboardPanels } from "./panels.js";
 
 const TYPE_META = {
   pi: { label: "PI", color: "#ff5b7a" },
@@ -20,7 +21,8 @@ const TYPE_META = {
 };
 
 const state = {
-  dashboard: null,
+  layout: null,
+  runtime: null,
   activeViewIndex: 0,
   activeTypes: new Set(Object.keys(TYPE_META)),
   nodeMap: new Map(),
@@ -43,6 +45,11 @@ const graphViewport = document.getElementById("graph-viewport");
 const groupLayer = document.getElementById("group-layer");
 const connectionLayer = document.getElementById("connection-layer");
 const nodeLayer = document.getElementById("node-layer");
+const checklistSummaryEl = document.getElementById("checklist-summary");
+const checklistListEl = document.getElementById("checklist-list");
+const readinessGridEl = document.getElementById("readiness-grid");
+const patchLossCanvasEl = document.getElementById("patchtst-loss-canvas");
+const swinLossCanvasEl = document.getElementById("swinmae-loss-canvas");
 
 const { lineGroup } = setupConnectionLayer(connectionLayer);
 
@@ -51,7 +58,7 @@ function clamp(value, min, max) {
 }
 
 function getCurrentView() {
-  return state.dashboard.views[state.activeViewIndex];
+  return state.layout.views[state.activeViewIndex];
 }
 
 function setStatus(text) {
@@ -100,7 +107,7 @@ function renderGroups(groups) {
 function renderTabs() {
   const fragment = document.createDocumentFragment();
 
-  state.dashboard.views.forEach((item, index) => {
+  state.layout.views.forEach((item, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "tab-button";
@@ -194,6 +201,26 @@ function renderView() {
     nodeMap: state.nodeMap,
     activeTypes: state.activeTypes
   });
+
+  applyNodeStatuses(view);
+}
+
+function applyNodeStatuses(view) {
+  const nodeStates = state.runtime?.nodes || {};
+  view.nodes.forEach((node) => {
+    const element = state.nodeElements.get(node.id);
+    if (!element) {
+      return;
+    }
+    const runtimeNode = nodeStates[node.id] || null;
+    const status = runtimeNode?.status || "idle";
+    element.dataset.status = status;
+    if (runtimeNode?.message) {
+      element.title = runtimeNode.message;
+    } else {
+      element.removeAttribute("title");
+    }
+  });
 }
 
 function setupGraphInteractions() {
@@ -235,7 +262,7 @@ function setupGraphInteractions() {
   });
 }
 
-async function loadDashboardData() {
+async function loadLayoutData() {
   const response = await fetch("./data/dashboard-layout.json");
   if (!response.ok) {
     throw new Error(`Unable to load dashboard layout: ${response.status}`);
@@ -244,23 +271,53 @@ async function loadDashboardData() {
   return response.json();
 }
 
+async function loadRuntimeData() {
+  const response = await fetch("./data/dashboard-state.json", {
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    return null;
+  }
+  return response.json();
+}
+
 async function init() {
   try {
-    state.dashboard = await loadDashboardData();
-    if (!Array.isArray(state.dashboard.views) || state.dashboard.views.length === 0) {
+    const [layout, runtime] = await Promise.all([loadLayoutData(), loadRuntimeData()]);
+    state.layout = layout;
+    state.runtime = runtime;
+
+    if (!Array.isArray(state.layout.views) || state.layout.views.length === 0) {
       throw new Error("dashboard-layout.json must include at least one view.");
     }
 
-    titleEl.textContent = state.dashboard.meta?.title || "Training Pipeline Dashboard";
-    subtitleEl.textContent = state.dashboard.meta?.subtitle || "Training flow";
-    dateEl.textContent = formatDate(state.dashboard.meta?.date || "");
+    titleEl.textContent = state.layout.meta?.title || "Training Pipeline Dashboard";
+    subtitleEl.textContent = state.layout.meta?.subtitle || "Training flow";
+
+    const runtimeDate = state.runtime?.meta?.timestamp || "";
+    const layoutDate = state.layout.meta?.date || "";
+    dateEl.textContent = formatDate(runtimeDate || layoutDate);
 
     renderTabs();
     renderLegend();
     renderView();
+    renderDashboardPanels({
+      runtimeState: state.runtime,
+      checklistSummaryEl,
+      checklistListEl,
+      readinessGridEl,
+      patchCanvasEl: patchLossCanvasEl,
+      swinCanvasEl: swinLossCanvasEl
+    });
     applyTransform();
     setupGraphInteractions();
-    setStatus("Dashboard ready.");
+    const checklistCount = state.runtime?.checklist?.length || 0;
+    if (checklistCount > 0) {
+      const passed = state.runtime.checklist.filter((item) => item.passed).length;
+      setStatus(`Dashboard ready. checklist ${passed}/${checklistCount}`);
+    } else {
+      setStatus("Dashboard ready. runtime state not found; graph-only mode.");
+    }
   } catch (error) {
     setStatus("Failed to initialize dashboard.");
     console.error(error);

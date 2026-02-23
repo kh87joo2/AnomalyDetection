@@ -136,6 +136,14 @@ h1 {
   min-height: 0;
 }
 
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+  min-height: 0;
+  height: 100%;
+}
+
 .canvas-wrapper {
   width: 100%;
   height: 100%;
@@ -149,6 +157,157 @@ h1 {
     radial-gradient(circle at 50% 40%, rgba(30, 50, 100, 0.55), rgba(6, 12, 25, 0.96));
   background-size: 38px 38px, 38px 38px, auto;
   touch-action: none;
+}
+
+.insight-panel {
+  min-height: 0;
+  border: 1px solid rgba(88, 126, 206, 0.45);
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(9, 16, 34, 0.94), rgba(12, 20, 44, 0.9));
+  padding: 10px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-card {
+  border: 1px solid rgba(101, 141, 219, 0.34);
+  border-radius: 12px;
+  background: rgba(8, 15, 30, 0.9);
+  padding: 10px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font: 600 0.78rem "IBM Plex Mono", monospace;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.panel-badge {
+  border: 1px solid rgba(124, 220, 255, 0.42);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font: 600 0.7rem "IBM Plex Mono", monospace;
+  color: #d9f8ff;
+  background: rgba(27, 83, 111, 0.36);
+}
+
+.panel-empty {
+  margin: 0;
+  color: rgba(163, 183, 220, 0.96);
+  font-size: 0.75rem;
+}
+
+.checklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.check-item {
+  border: 1px solid rgba(109, 145, 220, 0.34);
+  border-radius: 10px;
+  padding: 7px 8px;
+  background: rgba(14, 24, 48, 0.86);
+}
+
+.check-item[data-state="pass"] {
+  border-color: rgba(114, 243, 186, 0.62);
+}
+
+.check-item[data-state="fail"] {
+  border-color: rgba(255, 123, 143, 0.65);
+}
+
+.check-item-title {
+  font: 600 0.69rem "IBM Plex Mono", monospace;
+  color: #e8f2ff;
+  margin-bottom: 6px;
+}
+
+.check-item-detail,
+.check-item-hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(177, 196, 229, 0.95);
+  line-height: 1.35;
+}
+
+.check-item-hint {
+  color: rgba(134, 220, 255, 0.98);
+  margin-top: 4px;
+}
+
+.readiness-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ready-card {
+  border: 1px solid rgba(106, 144, 216, 0.34);
+  border-radius: 9px;
+  padding: 8px;
+  background: rgba(11, 20, 40, 0.92);
+}
+
+.ready-card[data-state="ready"] {
+  border-color: rgba(114, 243, 186, 0.64);
+  box-shadow: inset 0 0 20px rgba(45, 124, 88, 0.2);
+}
+
+.ready-card[data-state="missing"] {
+  border-color: rgba(255, 121, 150, 0.58);
+  box-shadow: inset 0 0 20px rgba(137, 45, 63, 0.18);
+}
+
+.ready-label {
+  margin: 0 0 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font: 600 0.62rem "IBM Plex Mono", monospace;
+  color: rgba(163, 183, 220, 0.92);
+}
+
+.ready-value {
+  font: 700 0.76rem "IBM Plex Mono", monospace;
+  color: #eef8ff;
+}
+
+.loss-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.loss-card {
+  border: 1px solid rgba(105, 143, 219, 0.34);
+  border-radius: 9px;
+  background: rgba(8, 16, 33, 0.9);
+  padding: 8px;
+}
+
+.loss-card h3 {
+  margin: 0 0 6px;
+  font: 600 0.7rem "IBM Plex Mono", monospace;
+  color: rgba(221, 236, 255, 0.95);
+}
+
+.loss-card canvas {
+  width: 100%;
+  height: 140px;
+  border: 1px solid rgba(85, 124, 203, 0.35);
+  border-radius: 6px;
 }
 
 .graph-viewport {
@@ -249,6 +408,18 @@ h1 {
 
   .canvas-wrapper {
     min-height: 72vh;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .insight-panel {
+    min-height: 420px;
+  }
+
+  .readiness-grid {
+    grid-template-columns: 1fr;
   }
 
   .bottom-bar {
