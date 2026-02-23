@@ -11,9 +11,9 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main.css?v=20260223d" />
-    <link rel="stylesheet" href="css/nodes.css?v=20260223d" />
-    <link rel="stylesheet" href="css/animations.css?v=20260223d" />
+    <link rel="stylesheet" href="css/main.css?v=20260223e" />
+    <link rel="stylesheet" href="css/nodes.css?v=20260223e" />
+    <link rel="stylesheet" href="css/animations.css?v=20260223e" />
   </head>
   <body>
     <div class="app-shell">
@@ -59,6 +59,24 @@
 
             <section class="panel-card">
               <div class="panel-header">
+                <h2>Run Comparison</h2>
+              </div>
+              <div class="comparison-controls">
+                <label class="compare-field">
+                  <span>Current</span>
+                  <select id="current-run-select"></select>
+                </label>
+                <label class="compare-field">
+                  <span>Baseline</span>
+                  <select id="baseline-run-select"></select>
+                </label>
+              </div>
+              <p id="comparison-note" class="panel-empty"></p>
+              <div id="comparison-metrics" class="comparison-grid"></div>
+            </section>
+
+            <section class="panel-card">
+              <div class="panel-header">
                 <h2>Readiness</h2>
               </div>
               <div id="readiness-grid" class="readiness-grid"></div>
@@ -91,6 +109,6 @@
       </footer>
     </div>
 
-    <script type="module" src="js/app.js?v=20260223d"></script>
+    <script type="module" src="js/app.js?v=20260223e"></script>
   </body>
 </html>

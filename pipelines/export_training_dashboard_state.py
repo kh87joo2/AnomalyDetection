@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,7 @@ from pipelines.validate_training_outputs import (
 )
 
 VALID_NODE_STATUS = {"idle", "running", "done", "fail"}
+RUN_ID_ALLOWED_PATTERN = re.compile(r"[^a-zA-Z0-9._-]+")
 
 
 def _resolve(repo_root: Path, maybe_relative: Path) -> Path:
@@ -129,6 +131,110 @@ def _extract_layout_node_ids(layout_path: Path) -> set[str]:
             if isinstance(node, dict) and isinstance(node.get("id"), str):
                 node_ids.add(node["id"])
     return node_ids
+
+
+def normalize_run_id(run_id: str | None) -> str:
+    if run_id is None:
+        return ""
+    normalized = RUN_ID_ALLOWED_PATTERN.sub("_", run_id.strip())
+    normalized = normalized.strip("_")
+    return normalized
+
+
+def _final_val_loss(series: list[dict[str, Any]]) -> float | None:
+    if not isinstance(series, list) or not series:
+        return None
+    for item in reversed(series):
+        if not isinstance(item, dict):
+            continue
+        value = item.get("val_loss")
+        if isinstance(value, (int, float)):
+            return float(value)
+    return None
+
+
+def _build_run_index_entry(payload: dict[str, Any], snapshot_file: str) -> dict[str, Any]:
+    checklist = payload.get("checklist", [])
+    passed = sum(1 for item in checklist if isinstance(item, dict) and bool(item.get("passed")))
+    total = len(checklist) if isinstance(checklist, list) else 0
+    patch_loss = _final_val_loss(payload.get("metrics", {}).get("patchtst", {}).get("loss", []))
+    swin_loss = _final_val_loss(payload.get("metrics", {}).get("swinmae", {}).get("loss", []))
+
+    return {
+        "run_id": str(payload.get("meta", {}).get("run_id", "")),
+        "file": snapshot_file,
+        "timestamp": str(payload.get("meta", {}).get("timestamp", "")),
+        "checklist": {
+            "passed": passed,
+            "total": total,
+        },
+        "final_val_loss": {
+            "patchtst": patch_loss,
+            "swinmae": swin_loss,
+        },
+    }
+
+
+def _persist_run_history(
+    *,
+    repo_root: Path,
+    payload: dict[str, Any],
+    run_history_dir: Path,
+    run_history_limit: int,
+    timestamp: str,
+) -> dict[str, str]:
+    history_root = _resolve(repo_root, run_history_dir)
+    history_root.mkdir(parents=True, exist_ok=True)
+
+    run_id = str(payload.get("meta", {}).get("run_id", "")).strip()
+    if not run_id:
+        raise ValueError("run_id must not be empty when persisting run history.")
+
+    snapshot_file = f"{run_id}.json"
+    snapshot_path = history_root / snapshot_file
+    snapshot_path.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
+
+    index_path = history_root / "index.json"
+    existing_runs: list[dict[str, Any]] = []
+    if index_path.exists():
+        try:
+            existing_index = json.loads(index_path.read_text(encoding="utf-8"))
+            if isinstance(existing_index, dict) and isinstance(existing_index.get("runs"), list):
+                existing_runs = [item for item in existing_index["runs"] if isinstance(item, dict)]
+        except Exception:
+            existing_runs = []
+
+    new_entry = _build_run_index_entry(payload, snapshot_file=snapshot_file)
+    merged_runs = [new_entry]
+    merged_runs.extend(item for item in existing_runs if item.get("run_id") != run_id)
+
+    limit = max(int(run_history_limit), 1)
+    pruned = merged_runs[limit:]
+    merged_runs = merged_runs[:limit]
+
+    kept_files = {
+        item.get("file")
+        for item in merged_runs
+        if isinstance(item.get("file"), str) and item.get("file")
+    }
+    for item in pruned:
+        file_name = item.get("file")
+        if not isinstance(file_name, str) or not file_name or file_name in kept_files:
+            continue
+        candidate = history_root / file_name
+        if candidate.exists() and candidate.is_file():
+            candidate.unlink()
+
+    index_payload = {
+        "generated_at": timestamp,
+        "runs": merged_runs,
+    }
+    index_path.write_text(json.dumps(index_payload, indent=2, ensure_ascii=True), encoding="utf-8")
+
+    return {
+        "snapshot_path": str(snapshot_path.relative_to(repo_root)),
+        "index_path": str(index_path.relative_to(repo_root)),
+    }
 
 
 def _collect_checklist_results(
@@ -332,10 +438,14 @@ def export_dashboard_state(
     layout_path: Path = Path("training_dashboard/data/dashboard-layout.json"),
     run_smoke: bool = False,
     smoke_timeout_sec: int = 300,
+    persist_run_history: bool = False,
+    run_history_dir: Path = Path("training_dashboard/data/runs"),
+    run_history_limit: int = 20,
 ) -> dict[str, Any]:
     root = repo_root.resolve()
     timestamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    effective_run_id = run_id or datetime.now(timezone.utc).strftime("run-%Y%m%d-%H%M%S")
+    generated_run_id = datetime.now(timezone.utc).strftime("run-%Y%m%d-%H%M%S")
+    effective_run_id = normalize_run_id(run_id) or generated_run_id
 
     patch_ckpt = _resolve(root, patch_checkpoint)
     swin_ckpt = _resolve(root, swin_checkpoint)
@@ -480,6 +590,18 @@ def export_dashboard_state(
     output = _resolve(root, out_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
+
+    if persist_run_history:
+        history_files = _persist_run_history(
+            repo_root=root,
+            payload=payload,
+            run_history_dir=run_history_dir,
+            run_history_limit=int(run_history_limit),
+            timestamp=timestamp,
+        )
+        payload["meta"]["run_history"] = history_files
+        output.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
+
     return payload
 
 
@@ -505,6 +627,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--run-smoke", action="store_true")
     parser.add_argument("--smoke-timeout-sec", type=int, default=300)
+    parser.add_argument("--persist-run-history", action="store_true")
+    parser.add_argument(
+        "--run-history-dir",
+        type=Path,
+        default=Path("training_dashboard/data/runs"),
+    )
+    parser.add_argument("--run-history-limit", type=int, default=20)
     return parser.parse_args()
 
 
@@ -525,11 +654,18 @@ def main() -> None:
         layout_path=args.layout_path,
         run_smoke=bool(args.run_smoke),
         smoke_timeout_sec=int(args.smoke_timeout_sec),
+        persist_run_history=bool(args.persist_run_history),
+        run_history_dir=args.run_history_dir,
+        run_history_limit=int(args.run_history_limit),
     )
     passed = sum(1 for item in state["checklist"] if item["passed"])
     total = len(state["checklist"])
     print(f"exported: {args.out}")
     print(f"checklist: {passed}/{total} passed")
+    history = state.get("meta", {}).get("run_history", {})
+    if isinstance(history, dict) and history:
+        print(f"run_snapshot: {history.get('snapshot_path')}")
+        print(f"run_index: {history.get('index_path')}")
 
 
 if __name__ == "__main__":
