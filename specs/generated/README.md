@@ -9,13 +9,13 @@ These files are generated from PRD/TRD/TODO inputs for Ralph loop execution.
 - `README.md`
 
 ## Specs
-- [`implement-previous-scope-backup-docs-archive-phase1-5-snapshot-2026-02-22.md`](./implement-previous-scope-backup-docs-archive-phase1-5-snapshot-2026-02-22.md): Implement Previous scope backup: docs/archive/phase1_5_snapshot_2026-02-22/
-- [`implement-current-execution-scope-dashboard-implementation-for-training-observability.md`](./implement-current-execution-scope-dashboard-implementation-for-training-observability.md): Implement Current execution scope: dashboard implementation for training observability
-- [`implement-checkpoints.md`](./implement-checkpoints.md): Implement checkpoints
-- [`implement-artifacts.md`](./implement-artifacts.md): Implement artifacts
-- [`implement-final-configs.md`](./implement-final-configs.md): Implement final configs
-- [`implement-validation-checklist-results.md`](./implement-validation-checklist-results.md): Implement validation checklist results
-- [`implement-checkpoints-ready.md`](./implement-checkpoints-ready.md): Implement checkpoints ready
-- [`implement-scaler-ready.md`](./implement-scaler-ready.md): Implement scaler ready
+- [`implement-previous-scope-backup-docs-archive-phase3-prep-backup-2026-02-26.md`](./implement-previous-scope-backup-docs-archive-phase3-prep-backup-2026-02-26.md): Implement Previous scope backup: docs/archive/phase3_prep_backup_2026-02-26/
+- [`current-execution-scope-import-test-data-and-run-batch-anomaly-decisions.md`](./current-execution-scope-import-test-data-and-run-batch-anomaly-decisions.md): Current execution scope: import test data and run batch anomaly decisions
+- [`implement-deferred-next-scope-real-time-ingestion-runtime.md`](./implement-deferred-next-scope-real-time-ingestion-runtime.md): Implement Deferred next scope: real-time ingestion runtime
+- [`implement-2-p0-batch-decision-skeleton.md`](./implement-2-p0-batch-decision-skeleton.md): Implement 2) P0 - Batch Decision Skeleton
+- [`implement-2a-p0-colab-validation-profile.md`](./implement-2a-p0-colab-validation-profile.md): Implement 2A) P0 - Colab Validation Profile
+- [`3-p0-test-data-import-and-preprocess.md`](./3-p0-test-data-import-and-preprocess.md): 3) P0 - Test Data Import and Preprocess
+- [`implement-4-p0-batch-scoring-integration.md`](./implement-4-p0-batch-scoring-integration.md): Implement 4) P0 - Batch Scoring Integration
+- [`implement-5-p1-decision-and-reporting.md`](./implement-5-p1-decision-and-reporting.md): Implement 5) P1 - Decision and Reporting
 
 Regenerate with: `scripts/setup.py .`
