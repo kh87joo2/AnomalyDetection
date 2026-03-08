@@ -467,3 +467,28 @@
   - user-side Colab verification after pull:
     - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --dry-run`
     - `python3 -m pytest -q tests/batch_decision/test_runner_skeleton.py tests/batch_decision/test_colab_profile.py`
+
+## 25) Continuation update - 2026-03-08 (P0C Colab verification completed)
+- User pulled latest `main` in Colab and completed the P0C verification path:
+  - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --dry-run`: PASS
+  - `python3 -m pytest -q tests/batch_decision/test_runner_skeleton.py tests/batch_decision/test_colab_profile.py`: PASS (`6 passed`)
+- P0C status promoted to complete based on Colab execution evidence.
+
+## 26) Continuation update - 2026-03-08 (P0D import/preprocess implementation ready)
+- Implemented P0D test-data import and training-compatible preprocess/window builder wrappers:
+  - `batch_decision/importers.py`
+  - `batch_decision/preprocess.py`
+  - `batch_decision/contracts.py`
+  - `batch_decision/__init__.py`
+  - `tests/batch_decision/test_import_and_preprocess.py`
+- Runtime configs now declare the training config references used for preprocess compatibility:
+  - `configs/batch_decision_runtime.yaml`
+  - `configs/batch_decision_runtime_colab.yaml`
+- Added Colab verification instructions for P0D in `docs/runbook.md`.
+- Local checks completed:
+  - `python3 -m py_compile batch_decision/__init__.py batch_decision/contracts.py batch_decision/importers.py batch_decision/preprocess.py tests/batch_decision/test_import_and_preprocess.py`: PASS
+- Local verification command blocker remains:
+  - `python3 -m pytest -q tests/batch_decision/test_import_and_preprocess.py` could not run because `pytest` is not installed in system or project venv.
+- Remaining close step for P0D:
+  - user-side Colab verification after pull:
+    - `python3 -m pytest -q tests/batch_decision/test_import_and_preprocess.py`

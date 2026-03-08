@@ -64,3 +64,19 @@ It does not run real batch scoring yet; import/preprocess/scoring arrive in `P0D
 6. Expected result:
    - the dry-run prints `batch_decision dry-run validation passed`
    - pytest passes for the runner skeleton and Colab profile tests
+
+## Phase 3A Batch Import and Preprocess validation
+This stage validates test-data import and training-compatible window building.
+It still does not run model scoring yet.
+
+1. Pull the latest `main` in Colab:
+   - `cd /content/AnomalyDetection`
+   - `git checkout main`
+   - `git pull --ff-only origin main`
+2. Install runtime and test dependencies:
+   - `python3 -m pip install -r requirements.txt -r requirements-dev.txt`
+3. Run the import/preprocess test target:
+   - `python3 -m pytest -q tests/batch_decision/test_import_and_preprocess.py`
+4. Expected result:
+   - pytest passes for the valid FDC/vibration sample inputs
+   - malformed timestamp/axis fixtures are rejected by the preprocessing wrappers

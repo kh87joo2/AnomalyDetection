@@ -11,3 +11,6 @@ run:
     scaler: artifacts/scaler_fdc.json
   output_dir: artifacts/batch_decision
 
+preprocess:
+  patchtst_config: configs/patchtst_ssl.yaml
+  swinmae_config: configs/swinmae_ssl.yaml
