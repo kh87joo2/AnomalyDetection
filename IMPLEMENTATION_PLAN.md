@@ -23,7 +23,7 @@ The Ralph loop managed plan section is appended or updated automatically.
 ### Priority Queue
 - [x] P0A: Back up previous Phase 2 docs to `docs/archive/phase3_prep_backup_2026-02-26/`.
 - [x] P0B: Build batch decision skeleton (`batch_decision/` package + dry-run runner).
-- [ ] P0C: Add Colab validation profile and reproducible Colab execution path.
+- [-] P0C: Add Colab validation profile and reproducible Colab execution path.
 - [ ] P0D: Implement test-data import + training-compatible preprocess/window builder.
 - [ ] P0E: Integrate batch scoring with existing checkpoints/scaler/config.
 - [ ] P1A: Implement decision engine + reporting exports (JSON/CSV + reason fields).

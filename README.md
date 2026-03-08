@@ -76,6 +76,25 @@ tensorboard --logdir runs
 - `checkpoints/patchtst_ssl.pt`
 - `checkpoints/swinmae_ssl.pt`
 
+## Phase 3A batch decision Colab validation
+
+This stage validates the batch decision runner profile and Colab execution path.
+It does not run real test-data scoring yet.
+
+1. Pull the latest `main` in Colab:
+- `cd /content/AnomalyDetection`
+- `git checkout main`
+- `git pull --ff-only origin main`
+2. Install runtime and test dependencies:
+- `python3 -m pip install -r requirements.txt -r requirements-dev.txt`
+3. Validate the Colab profile:
+- `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --dry-run`
+4. Run the profile verification tests:
+- `python3 -m pytest -q tests/batch_decision/test_runner_skeleton.py tests/batch_decision/test_colab_profile.py`
+5. Expected outcome:
+- dry-run prints `batch_decision dry-run validation passed`
+- pytest passes for the runner skeleton and Colab profile tests
+
 ## Notebooks and scoring example
 
 Colab notebooks:

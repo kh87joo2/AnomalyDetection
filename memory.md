@@ -452,3 +452,18 @@
   - `python3 -m batch_decision.runner --config configs/batch_decision_runtime.yaml --dry-run`: PASS
   - `python3 -m pytest -q tests/batch_decision/test_runner_skeleton.py`: PASS (`4 passed`)
 - P0B status promoted to complete based on Colab verification evidence.
+
+## 24) Continuation update - 2026-03-08 (P0C Colab profile implementation ready)
+- Implemented P0C Colab validation profile assets:
+  - `configs/batch_decision_runtime_colab.yaml`
+  - `tests/batch_decision/test_colab_profile.py`
+  - `docs/runbook.md` Phase 3A batch decision Colab flow section
+  - `README.md` Phase 3A batch decision Colab validation section
+  - `notebooks/README.txt` CLI note for batch decision validation
+- Local checks completed:
+  - `python3 -m py_compile batch_decision/runner.py tests/batch_decision/test_colab_profile.py`: PASS
+  - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --dry-run`: PASS
+- Remaining close step for P0C:
+  - user-side Colab verification after pull:
+    - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --dry-run`
+    - `python3 -m pytest -q tests/batch_decision/test_runner_skeleton.py tests/batch_decision/test_colab_profile.py`

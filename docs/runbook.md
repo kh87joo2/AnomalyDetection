@@ -43,3 +43,24 @@
 - Copy repo as-is.
 - Install compatible CUDA PyTorch build.
 - Run the same commands used in Colab.
+
+## Phase 3A Batch Decision Colab profile
+This stage validates the Colab execution profile and runner contract only.
+It does not run real batch scoring yet; import/preprocess/scoring arrive in `P0D` and `P0E`.
+
+1. Pull the latest `main` in Colab:
+   - `cd /content/AnomalyDetection`
+   - `git checkout main`
+   - `git pull --ff-only origin main`
+2. Install runtime and test dependencies:
+   - `python3 -m pip install -r requirements.txt -r requirements-dev.txt`
+3. Confirm the profile files exist:
+   - `ls -la configs/batch_decision_runtime_colab.yaml`
+   - `ls -la artifacts/thresholds/batch_decision_thresholds.json`
+4. Validate the Colab profile with the batch runner:
+   - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --dry-run`
+5. Run the P0C validation tests:
+   - `python3 -m pytest -q tests/batch_decision/test_runner_skeleton.py tests/batch_decision/test_colab_profile.py`
+6. Expected result:
+   - the dry-run prints `batch_decision dry-run validation passed`
+   - pytest passes for the runner skeleton and Colab profile tests
