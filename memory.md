@@ -500,3 +500,24 @@
   - `dqvl/vib_rules.py` emitted `RuntimeWarning` entries from `nanmin` / `nanmax` / `nanmean` on an intentionally broken input fixture with an all-NaN axis.
   - This did not block the test outcome because the wrapper still rejected the malformed input as required.
 - P0D status promoted to complete based on Colab execution evidence.
+
+## 28) Continuation update - 2026-03-08 (P0E batch scoring implementation ready)
+- Implemented P0E batch scoring integration with existing checkpoints/scaler/config:
+  - `batch_decision/scoring_engine.py`
+  - `batch_decision/runner.py` (`--score-only` mode)
+  - `batch_decision/contracts.py`
+  - `batch_decision/__init__.py`
+  - `tests/batch_decision/test_scoring_engine.py`
+  - `tests/batch_decision/test_runner_score_only.py`
+- Scoring path now reuses:
+  - PatchTST checkpoint + saved `ChannelScaler`
+  - SwinMAE checkpoint + existing CWT/image transform config
+  - unified `inference/scoring.py` dispatch for per-window score generation
+- Local checks completed:
+  - `python3 -m py_compile batch_decision/__init__.py batch_decision/contracts.py batch_decision/scoring_engine.py batch_decision/runner.py tests/batch_decision/test_scoring_engine.py tests/batch_decision/test_runner_score_only.py`: PASS
+- Local verification command blocker remains:
+  - `python3 -m pytest ...` could not run because `pytest` is not installed in system or project venv.
+- Remaining close step for P0E:
+  - user-side Colab verification after pull:
+    - `python3 -m pytest -q tests/batch_decision/test_scoring_engine.py tests/batch_decision/test_runner_score_only.py`
+    - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --score-only`

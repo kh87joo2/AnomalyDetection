@@ -62,3 +62,30 @@ class PreparedBatch:
     dqvl_records: list[DQVLRecord]
     skipped_files: list[str]
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class WindowScore:
+    event_id: str
+    stream: Literal["patchtst", "swinmae"]
+    file_id: str
+    timestamp: str | None
+    window_index: int
+    score: float
+    aux: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class StreamScorePayload:
+    stream: Literal["patchtst", "swinmae"]
+    records: list[WindowScore]
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class BatchScorePayload:
+    run_id: str
+    stream: StreamName
+    patchtst_records: list[WindowScore] = field(default_factory=list)
+    swinmae_records: list[WindowScore] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)

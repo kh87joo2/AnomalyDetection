@@ -80,3 +80,25 @@ It still does not run model scoring yet.
 4. Expected result:
    - pytest passes for the valid FDC/vibration sample inputs
    - malformed timestamp/axis fixtures are rejected by the preprocessing wrappers
+
+## Phase 3A Batch Scoring validation
+This stage validates checkpoint/scaler/config reuse and emits per-window score payloads.
+It still does not apply decision thresholds or export reports yet.
+
+1. Pull the latest `main` in Colab:
+   - `cd /content/AnomalyDetection`
+   - `git checkout main`
+   - `git pull --ff-only origin main`
+2. Install runtime and test dependencies:
+   - `python3 -m pip install -r requirements.txt -r requirements-dev.txt`
+3. Run the scoring tests:
+   - `python3 -m pytest -q tests/batch_decision/test_scoring_engine.py tests/batch_decision/test_runner_score_only.py`
+4. Before the real CLI run, confirm `configs/batch_decision_runtime_colab.yaml` points to real test files that match your trained artifacts:
+   - `run.input_paths.patchtst`
+   - `run.input_paths.swinmae`
+5. Run the score-only CLI with real artifacts:
+   - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --score-only`
+6. Expected result:
+   - pytest passes for the scoring engine and score-only runner tests
+   - the CLI prints `batch_decision score-only run completed`
+   - stream window counts and sample score values are printed for the configured inputs

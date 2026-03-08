@@ -23,6 +23,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Validate config/contracts only (no scoring execution).",
     )
+    parser.add_argument(
+        "--score-only",
+        action="store_true",
+        help="Run preprocess + batch scoring only (no decision/report export yet).",
+    )
     return parser.parse_args(argv)
 
 
@@ -166,18 +171,55 @@ def run_dry_run(config_path: Path) -> BatchRunRequest:
     return request
 
 
+def run_score_only(config_path: Path) -> BatchRunRequest:
+    runtime_config = load_yaml_config(config_path.resolve())
+    request = validate_runtime_config(runtime_config, config_path=config_path.resolve())
+
+    from batch_decision.scoring_engine import score_batch_request
+
+    payload = score_batch_request(
+        request,
+        runtime_config=runtime_config,
+        runtime_config_path=config_path.resolve(),
+    )
+
+    print("batch_decision score-only run completed")
+    print(f"run_id={payload.run_id}")
+    print(f"stream={payload.stream}")
+    if payload.patchtst_records:
+        print(f"patchtst_windows={len(payload.patchtst_records)}")
+        print(
+            "patchtst_score_sample="
+            f"{[round(record.score, 6) for record in payload.patchtst_records[:5]]}"
+        )
+    if payload.swinmae_records:
+        print(f"swinmae_windows={len(payload.swinmae_records)}")
+        print(
+            "swinmae_score_sample="
+            f"{[round(record.score, 6) for record in payload.swinmae_records[:5]]}"
+        )
+    return request
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    if not args.dry_run:
+    if args.dry_run and args.score_only:
+        print("Choose exactly one mode: --dry-run or --score-only.", file=sys.stderr)
+        return 2
+    if not args.dry_run and not args.score_only:
         print(
-            "P0B skeleton currently supports validation-only mode. Use --dry-run.",
+            "P0B skeleton currently supports validation-only mode. Use --dry-run or --score-only.",
             file=sys.stderr,
         )
         return 2
     try:
-        run_dry_run(config_path=args.config)
-    except ConfigError as exc:
-        print(f"config validation failed: {exc}", file=sys.stderr)
+        if args.dry_run:
+            run_dry_run(config_path=args.config)
+        else:
+            run_score_only(config_path=args.config)
+    except (ConfigError, FileNotFoundError, ValueError, RuntimeError) as exc:
+        prefix = "config validation failed" if args.dry_run else "score-only failed"
+        print(f"{prefix}: {exc}", file=sys.stderr)
         return 1
     return 0
 
