@@ -1,88 +1,140 @@
-# Runbook (Phase 1)
+# Runbook (Local PC)
 
-## Colab GPU setup
-1. Runtime -> Change runtime type -> GPU
-2. Install deps: `pip install -r requirements.txt`
-
-## Train commands
-- PatchTST: `python -m trainers.train_patchtst_ssl --config configs/patchtst_ssl.yaml`
-- SwinMAE: `python -m trainers.train_swinmae_ssl --config configs/swinmae_ssl.yaml`
-
-## Local sanity check
-- Compile modules: `python -m compileall core datasets models trainers inference`
-- Run smoke tests: `pytest -q`
-
-## Checkpoint verification
-- `ls -lh checkpoints/patchtst_ssl.pt checkpoints/swinmae_ssl.pt`
-- Confirm both files exist and have non-zero size.
-
-## Loss curve verification
-- `ls -lh artifacts/loss/*_loss_history.csv artifacts/loss/*_loss_curve.png`
-- Verify train/val loss curves are generated for each stream.
-- Optional interactive view: `tensorboard --logdir runs`
-
-## Scoring example command
-- PatchTST: `python -m inference.run_scoring_example --stream patchtst --checkpoint checkpoints/patchtst_ssl.pt --config configs/patchtst_ssl.yaml`
-- SwinMAE: `python -m inference.run_scoring_example --stream swinmae --checkpoint checkpoints/swinmae_ssl.pt --config configs/swinmae_ssl.yaml`
-
-## Training completion checklist (automated)
-- Run: `python -m pipelines.validate_training_outputs`
-- Output format:
-  - `[v] PASS` or `[ ] FAIL` per checklist item.
-  - Summary with passed/failed counts.
-
-## Dashboard state export (Phase 2)
-- Generate runtime state JSON:
-  - `python -m pipelines.export_training_dashboard_state --repo-root . --out training_dashboard/data/dashboard-state.json`
-- Optional smoke-included export:
-  - `python -m pipelines.export_training_dashboard_state --repo-root . --out training_dashboard/data/dashboard-state.json --run-smoke`
-- Start dashboard static server:
-  - `python -m http.server 8765 --directory training_dashboard`
-
-## Interactive dashboard training (upload + Train button)
-Use the dashboard API server (not plain `http.server`) when you want to import files and trigger training from UI:
+## 1. Environment setup
 
 ```bash
-python3 -m training_dashboard.server --host 127.0.0.1 --port 8765
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-Then open `http://127.0.0.1:8765` and:
-1. Import PatchTST files (CSV/Parquet or ZIP containing those).
-2. Import SwinMAE files (CSV/NPY or ZIP containing those).
-3. Click `Train`.
-4. Watch node glow state (`running/done/fail`) to track the active step in real time.
-
-The dashboard runner executes:
-- `pipelines.run_local_training_pipeline`
-- scoring for both streams
-- validation checklist
-- dashboard-state export with run history persistence
-
-## Notebook-free local workflow (recommended)
-Use the integrated Python workflow to replace notebook execution end-to-end.
-This workflow does **not** download Kaggle datasets. Provide local dataset paths directly.
+Optional CUDA check:
 
 ```bash
-python3 -m pipelines.run_local_training_pipeline \
-  --repo-root . \
-  --patch-config configs/patchtst_ssl_local.yaml \
-  --swin-config configs/swinmae_ssl_local.yaml \
-  --patch-data-source csv \
-  --patch-data-path "/absolute/path/to/patchtst_data/*.csv" \
-  --swin-data-source csv \
-  --swin-data-path "/absolute/path/to/swinmae_data/**/*.csv" \
-  --persist-run-history \
-  --validate-skip-smoke
+python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO CUDA')"
 ```
 
-Useful options:
-- Dry run command preview only: `--dry-run`
-- Skip one stream: `--skip-patchtst` or `--skip-swinmae`
-- Skip full steps: `--skip-scoring`, `--skip-validate`, `--skip-export`
-- Force smoke validation inside export: `--run-smoke`
-- Runtime config output location: `--runtime-config-dir artifacts/runtime_configs`
+## 2. Place data files
 
-## Local CUDA PC migration
-- Copy repo as-is.
-- Install compatible CUDA PyTorch build.
-- Run the same commands used in Colab, or use the notebook-free local workflow above.
+Default folder layout:
+
+- `data/local/train/fdc/`
+- `data/local/train/vib/`
+- `data/local/test/fdc/`
+- `data/local/test/vib/`
+
+Format expectations:
+
+- FDC CSV/parquet: optional `timestamp` or `time`; all other columns are numeric features.
+- Vibration CSV: columns `x`, `y`, `z`, optional `timestamp` or `time`.
+- Vibration NPY: shape `(T, 3)`.
+
+## 3. Run training
+
+Default command:
+
+```bash
+python run_local_train.py
+```
+
+What it does:
+
+- trains PatchTST with `configs/patchtst_ssl_local.yaml`
+- trains SwinMAE with `configs/swinmae_ssl_local.yaml`
+- runs one scoring example per stream
+- validates output artifacts
+- exports `training_dashboard/data/dashboard-state.json`
+
+Key training outputs:
+
+- `checkpoints/patchtst_ssl.pt`
+- `checkpoints/swinmae_ssl.pt`
+- `artifacts/scaler_fdc.json`
+- `artifacts/loss/patchtst_loss_history.csv`
+- `artifacts/loss/swinmae_loss_history.csv`
+
+## 4. Run test scoring and export results
+
+Default command:
+
+```bash
+python run_local_test.py
+```
+
+What it does:
+
+- loads `configs/batch_decision_runtime_local_gpu.yaml`
+- preprocesses test files with the same training-compatible configs
+- scores windows with trained checkpoints
+- applies `normal | warn | anomaly` threshold mapping
+- exports JSON and CSV reports
+
+Default report location:
+
+- `artifacts/batch_decision/local_gpu/<run_id>/summary.json`
+- `artifacts/batch_decision/local_gpu/<run_id>/patchtst_events.json`
+- `artifacts/batch_decision/local_gpu/<run_id>/patchtst_events.csv`
+- `artifacts/batch_decision/local_gpu/<run_id>/swinmae_events.json`
+- `artifacts/batch_decision/local_gpu/<run_id>/swinmae_events.csv`
+
+## 5. Single-stream execution
+
+PatchTST only:
+
+```bash
+python run_local_train.py --skip-swinmae
+python run_local_test.py --stream patchtst
+```
+
+SwinMAE only:
+
+```bash
+python run_local_train.py --skip-patchtst
+python run_local_test.py --stream swinmae
+```
+
+## 6. Useful overrides
+
+Train with explicit data globs:
+
+```bash
+python run_local_train.py   --patch-data-path "data/local/train/fdc/*.csv"   --swin-data-path "data/local/train/vib/*.csv"
+```
+
+Test with explicit paths or custom output directory:
+
+```bash
+python run_local_test.py   --patch-test-path "data/local/test/fdc/*.csv"   --swin-test-path "data/local/test/vib/*.csv"   --output-dir "artifacts/batch_decision/manual_run"
+```
+
+Dry-run config validation:
+
+```bash
+python run_local_test.py --dry-run
+```
+
+## 7. Common failure points
+
+Missing training data:
+
+- `run_local_train.py` fails if no files match `data.path` in local configs.
+
+Missing test data:
+
+- `run_local_test.py` fails if no files match `run.input_paths.*`.
+
+Missing artifacts before test:
+
+- test flow requires:
+  - `checkpoints/patchtst_ssl.pt` when PatchTST is enabled
+  - `checkpoints/swinmae_ssl.pt` when SwinMAE is enabled
+  - `artifacts/scaler_fdc.json` for PatchTST
+  - `artifacts/thresholds/batch_decision_thresholds.json`
+
+## 8. Dashboard
+
+After training, you can open the static dashboard with:
+
+```bash
+python -m http.server 8765 --directory training_dashboard
+```

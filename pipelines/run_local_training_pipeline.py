@@ -284,13 +284,13 @@ def parse_args() -> argparse.Namespace:
         "--patch-data-path",
         type=str,
         default=None,
-        help="Local file path or glob for PatchTST input data. Example: data/fdc/*.csv",
+        help="Local file path or glob for PatchTST input data. Example: data/local/train/fdc/*.csv",
     )
     parser.add_argument(
         "--swin-data-path",
         type=str,
         default=None,
-        help="Local file path or glob for SwinMAE input data. Example: data/vib/*.csv",
+        help="Local file path or glob for SwinMAE input data. Example: data/local/train/vib/*.csv",
     )
     parser.add_argument(
         "--patch-data-source",
@@ -312,14 +312,12 @@ def parse_args() -> argparse.Namespace:
         default=Path("artifacts/runtime_configs"),
         help="Directory where generated runtime configs are written.",
     )
-
     parser.add_argument("--skip-patchtst", action="store_true")
     parser.add_argument("--skip-swinmae", action="store_true")
     parser.add_argument("--skip-scoring", action="store_true")
     parser.add_argument("--skip-validate", action="store_true")
     parser.add_argument("--skip-export", action="store_true")
     parser.add_argument("--validate-skip-smoke", action="store_true")
-
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -330,12 +328,7 @@ def main() -> None:
 
     patch_cfg = _resolve(repo_root, args.patch_config)
     swin_cfg = _resolve(repo_root, args.swin_config)
-
-    missing: list[Path] = []
-    for cfg_path in [patch_cfg, swin_cfg]:
-        if not cfg_path.exists():
-            missing.append(cfg_path)
-
+    missing = [cfg_path for cfg_path in [patch_cfg, swin_cfg] if not cfg_path.exists()]
     if missing:
         joined = ", ".join(str(p) for p in missing)
         raise SystemExit(f"Missing config files: {joined}")
@@ -375,7 +368,6 @@ def main() -> None:
     )
 
     effective_run_id = (args.run_id or "").strip() or _default_run_id()
-
     steps = build_command_steps(
         repo_root=repo_root,
         patch_config=patch_runtime_cfg,
@@ -394,7 +386,6 @@ def main() -> None:
         validate_skip_smoke=bool(args.validate_skip_smoke),
         skip_export=bool(args.skip_export),
     )
-
     if not steps:
         raise SystemExit("No workflow steps selected. Remove --skip-* flags.")
 

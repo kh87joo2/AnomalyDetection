@@ -10,8 +10,8 @@ logging:
   checkpoint_path: checkpoints/swinmae_ssl.pt
 
 data:
-  source: synthetic  # synthetic | csv | npy
-  path: data/vib/*.csv
+  source: csv  # synthetic | csv | npy
+  path: data/local/train/vib/*.csv
   timestamp_col: timestamp
   fs: 2000
   assume_actual_fs_equals_config: true
@@ -65,5 +65,3 @@ training:
   lr: 0.0005
   weight_decay: 0.0001
   num_workers: 0
-  max_train_batches: 60
-  max_val_batches: 12

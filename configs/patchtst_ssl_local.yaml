@@ -10,8 +10,8 @@ logging:
   checkpoint_path: checkpoints/patchtst_ssl.pt
 
 data:
-  source: synthetic  # synthetic | csv | parquet
-  path: data/fdc/*.csv
+  source: csv  # synthetic | csv | parquet
+  path: data/local/train/fdc/*.csv
   timestamp_col: timestamp
   channels: 64
   total_steps: 12000
@@ -49,5 +49,3 @@ training:
   lr: 0.001
   weight_decay: 0.0001
   num_workers: 0
-  max_train_batches: 100
-  max_val_batches: 20

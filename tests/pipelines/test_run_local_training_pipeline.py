@@ -96,12 +96,12 @@ def test_prepare_runtime_config_applies_local_data_overrides(tmp_path: Path) -> 
                 "seed: 42",
                 "data:",
                 "  source: synthetic",
-                "  path: data/fdc/*.csv",
+                "  path: data/local/train/fdc/*.csv",
                 "",
             ]
         ),
     )
-    _touch(tmp_path / "data/fdc/local_patch.csv", "timestamp,a,b\n1,0.1,0.2\n")
+    _touch(tmp_path / "data/local/train/fdc/local_patch.csv", "timestamp,a,b\n1,0.1,0.2\n")
 
     runtime_cfg_path, runtime_payload = _prepare_runtime_config(
         repo_root=tmp_path,
@@ -109,13 +109,13 @@ def test_prepare_runtime_config_applies_local_data_overrides(tmp_path: Path) -> 
         runtime_config=Path("artifacts/runtime_configs/patchtst_runtime.yaml"),
         stream_name="patchtst",
         source_override="csv",
-        data_path_override="data/fdc/*.csv",
+        data_path_override="data/local/train/fdc/*.csv",
     )
 
     assert runtime_cfg_path.exists()
     data_cfg = runtime_payload.get("data", {})
     assert data_cfg["source"] == "csv"
-    assert data_cfg["path"] == "data/fdc/*.csv"
+    assert data_cfg["path"] == "data/local/train/fdc/*.csv"
 
 
 def test_prepare_runtime_config_raises_when_real_data_path_missing(tmp_path: Path) -> None:
@@ -126,7 +126,7 @@ def test_prepare_runtime_config_raises_when_real_data_path_missing(tmp_path: Pat
                 "seed: 42",
                 "data:",
                 "  source: csv",
-                "  path: data/vib/*.csv",
+                "  path: data/local/train/vib/*.csv",
                 "",
             ]
         ),
@@ -139,5 +139,5 @@ def test_prepare_runtime_config_raises_when_real_data_path_missing(tmp_path: Pat
             runtime_config=Path("artifacts/runtime_configs/swinmae_runtime.yaml"),
             stream_name="swinmae",
             source_override="csv",
-            data_path_override="data/vib/*.csv",
+            data_path_override="data/local/train/vib/*.csv",
         )

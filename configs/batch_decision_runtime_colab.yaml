@@ -1,0 +1,21 @@
+environment:
+  profile: colab
+  expected_cwd: /content/AnomalyDetection
+  validation_stage: p0c_profile_validation
+
+run:
+  run_id: batch_decision_colab_validation
+  stream: dual
+  input_paths:
+    patchtst: data/fdc/test_fdc.csv
+    swinmae: data/vibration/test_vibration.csv
+  artifact_paths:
+    thresholds: artifacts/thresholds/batch_decision_thresholds.json
+    patchtst_checkpoint: checkpoints/patchtst_ssl.pt
+    swinmae_checkpoint: checkpoints/swinmae_ssl.pt
+    scaler: artifacts/scaler_fdc.json
+  output_dir: artifacts/batch_decision/colab_validation
+
+preprocess:
+  patchtst_config: configs/patchtst_ssl.yaml
+  swinmae_config: configs/swinmae_ssl.yaml

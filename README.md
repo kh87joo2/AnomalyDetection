@@ -1,105 +1,90 @@
-# Anomaly Detection Framework (Phase 1 Skeleton)
+# Anomaly Detection Framework (Local PC Flow)
 
-This repository contains the first runnable core for two self-supervised anomaly modeling streams:
+This repository copy is prepared for local execution without notebooks.
+Put your train and test data into the default folders, run one Python command for training, then run one Python command for test scoring and result export.
 
-- PatchTST-SSL for multivariate FDC time series
-- SwinMAE-SSL for vibration (x, y, z) transformed by Morlet CWT (`pywt`)
-
-## Fixed decisions applied
-
-- Code root: current repository folder
-- Objective: masked reconstruction for both streams
-- CWT backend: `pywt` (fixed in Phase 1)
-- Default normalization: `robust` (easy switch to `zscore` in config)
-- Runtime strategy: validate in Google Colab with CUDA GPU, then migrate unchanged commands to local CUDA PC
-
-## Repository structure
-
-- `configs/`: training configs
-- `datasets/`: synthetic generators, dataset builders, transforms
-- `models/`: PatchTST and SwinMAE skeleton models
-- `trainers/`: training entry points and shared utils
-- `inference/`: unified score API and adapters
-- `core/`: config loader and contracts
-
-## Setup
+## Quick Start
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-## Testing
-
-Smoke tests were added for quick local verification.
+Optional CUDA check:
 
 ```bash
-pytest -q
+python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO CUDA')"
 ```
 
-## Train (smoke validation)
+## Default Folder Layout
 
-PatchTST-SSL:
+- `data/local/train/fdc/`
+- `data/local/train/vib/`
+- `data/local/test/fdc/`
+- `data/local/test/vib/`
+
+Detailed format notes are in `data/local/README.md`.
+
+## Default Commands
+
+Train both streams and export dashboard state:
 
 ```bash
-python -m trainers.train_patchtst_ssl --config configs/patchtst_ssl.yaml
+python run_local_train.py
 ```
 
-SwinMAE-SSL:
+Run test scoring and export JSON/CSV decision results:
 
 ```bash
-python -m trainers.train_swinmae_ssl --config configs/swinmae_ssl.yaml
+python run_local_test.py
 ```
 
-## Loss curve artifacts
+## Optional Stream-Specific Commands
 
-After training, both scripts save epoch loss artifacts:
-- `artifacts/loss/patchtst_loss_history.csv`
-- `artifacts/loss/patchtst_loss_curve.png`
-- `artifacts/loss/swinmae_loss_history.csv`
-- `artifacts/loss/swinmae_loss_curve.png`
-
-You can also view interactive curves with TensorBoard:
+PatchTST only:
 
 ```bash
-tensorboard --logdir runs
+python run_local_train.py --skip-swinmae
+python run_local_test.py --stream patchtst
 ```
 
-## Colab GPU validation flow
+SwinMAE only:
 
-1. Open Colab and set runtime to GPU.
-2. Clone/upload this repository.
-3. Install requirements.
-4. Run both training commands above.
-5. Verify checkpoint outputs:
+```bash
+python run_local_train.py --skip-patchtst
+python run_local_test.py --stream swinmae
+```
+
+## Outputs
+
+Training produces:
+
 - `checkpoints/patchtst_ssl.pt`
 - `checkpoints/swinmae_ssl.pt`
+- `artifacts/scaler_fdc.json`
+- `artifacts/loss/*.csv`
+- `artifacts/loss/*.png`
+- `training_dashboard/data/dashboard-state.json`
 
-## Notebooks and scoring example
+Test execution produces:
 
-Colab notebooks:
-- `notebooks/colab_patchtst_ssl.ipynb`
-- `notebooks/colab_swinmae_ssl.ipynb`
+- `artifacts/batch_decision/local_gpu/<run_id>/summary.json`
+- `artifacts/batch_decision/local_gpu/<run_id>/patchtst_events.json`
+- `artifacts/batch_decision/local_gpu/<run_id>/patchtst_events.csv`
+- `artifacts/batch_decision/local_gpu/<run_id>/swinmae_events.json`
+- `artifacts/batch_decision/local_gpu/<run_id>/swinmae_events.csv`
 
-Scoring example:
-```bash
-python -m inference.run_scoring_example --stream patchtst --checkpoint checkpoints/patchtst_ssl.pt --config configs/patchtst_ssl.yaml
-python -m inference.run_scoring_example --stream swinmae --checkpoint checkpoints/swinmae_ssl.pt --config configs/swinmae_ssl.yaml
-```
+## Default Configs
 
-## Unified scoring API
+- `configs/patchtst_ssl_local.yaml`
+- `configs/swinmae_ssl_local.yaml`
+- `configs/batch_decision_runtime_local_gpu.yaml`
 
-Use `inference/scoring.py`:
+Defaults assume CSV files in `data/local/...` and prefer CUDA automatically when available.
 
-```python
-from inference.scoring import infer_score
+## Notes
 
-out = infer_score(batch, model, stream="patchtst")
-score = out["score"]     # (B,)
-aux = out["aux"]         # diagnostics
-```
-
-## Local CUDA PC migration
-
-Use the same config and command lines. Only ensure CUDA-compatible PyTorch is installed on the target PC.
+- `python run_local_train.py` uses the existing trainer modules, not notebooks.
+- `python run_local_test.py` uses the trained checkpoints, PatchTST scaler, and default thresholds from `artifacts/thresholds/batch_decision_thresholds.json`.
+- If you need different paths, you can override them with CLI options shown in `docs/runbook.md`.

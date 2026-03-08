@@ -1,0 +1,15 @@
+{
+  "patchtst": {
+    "warn": 0.65,
+    "anomaly": 0.85
+  },
+  "swinmae": {
+    "warn": 0.60,
+    "anomaly": 0.82
+  },
+  "dual": {
+    "warn": 0.68,
+    "anomaly": 0.88
+  }
+}
+

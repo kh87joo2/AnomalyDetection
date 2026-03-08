@@ -1,0 +1,19 @@
+environment:
+  profile: local_gpu
+
+run:
+  run_id: local_batch_test
+  stream: dual
+  input_paths:
+    patchtst: data/local/test/fdc/*.csv
+    swinmae: data/local/test/vib/*.csv
+  artifact_paths:
+    thresholds: artifacts/thresholds/batch_decision_thresholds.json
+    patchtst_checkpoint: checkpoints/patchtst_ssl.pt
+    swinmae_checkpoint: checkpoints/swinmae_ssl.pt
+    scaler: artifacts/scaler_fdc.json
+  output_dir: artifacts/batch_decision/local_gpu
+
+preprocess:
+  patchtst_config: configs/patchtst_ssl_local.yaml
+  swinmae_config: configs/swinmae_ssl_local.yaml
