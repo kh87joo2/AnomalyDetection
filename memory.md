@@ -492,3 +492,11 @@
 - Remaining close step for P0D:
   - user-side Colab verification after pull:
     - `python3 -m pytest -q tests/batch_decision/test_import_and_preprocess.py`
+
+## 27) Continuation update - 2026-03-08 (P0D Colab verification completed)
+- User pulled latest `main` in Colab and completed the P0D verification path:
+  - `python3 -m pytest -q tests/batch_decision/test_import_and_preprocess.py`: PASS (`4 passed`)
+- Warning summary observed during the malformed vibration-axis rejection test:
+  - `dqvl/vib_rules.py` emitted `RuntimeWarning` entries from `nanmin` / `nanmax` / `nanmean` on an intentionally broken input fixture with an all-NaN axis.
+  - This did not block the test outcome because the wrapper still rejected the malformed input as required.
+- P0D status promoted to complete based on Colab execution evidence.
