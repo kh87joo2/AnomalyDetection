@@ -631,3 +631,15 @@
   - importing `batch_decision.runner` for a local profile smoke failed because `numpy` is not installed in this environment
 - Remaining close step for P1C:
   - user-side Colab verification of the new profile contract and runbook flow
+
+## 36) Continuation update - 2026-03-11 (P1C Colab verification completed)
+- User executed the P1C verification targets in Colab:
+  - `python3 -m pytest -q tests/batch_decision/test_local_gpu_profile.py`: PASS (`3 passed`)
+  - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_local_gpu.yaml --dry-run`: PASS
+- Verified behavior:
+  - local GPU profile contract loads successfully
+  - Colab and local GPU profiles keep the same artifact/preprocess schema
+  - local GPU dry-run resolves the shared threshold artifact and validates `dual` mode requirements
+- Note from Colab workspace:
+  - `configs/batch_decision_runtime_colab.yaml` was locally modified in Colab before pull (`M`), which is expected from prior test-path edits and does not affect the committed repository state.
+- P1C status promoted to complete based on Colab profile tests and dry-run evidence.

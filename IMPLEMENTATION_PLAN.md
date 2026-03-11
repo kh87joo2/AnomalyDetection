@@ -28,7 +28,7 @@ The Ralph loop managed plan section is appended or updated automatically.
 - [x] P0E: Integrate batch scoring with existing checkpoints/scaler/config.
 - [x] P1A: Implement decision engine + reporting exports (JSON/CSV + reason fields).
 - [x] P1B: Implement dashboard bridge with separate test-data decision tab/view and overlaid score/threshold graph.
-- [-] P1C: Prepare local GPU migration profile (config-only toggles from Colab profile).
+- [x] P1C: Prepare local GPU migration profile (config-only toggles from Colab profile).
 
 ### Generated Specs
 - `specs/generated/README.md`
@@ -93,10 +93,10 @@ The Ralph loop managed plan section is appended or updated automatically.
 #### T07 - P1C Local GPU Migration Readiness
 - Source: `todo.md`
 - Done checklist:
-  - [ ] Behavior is implemented and mapped to source requirements.
-  - [ ] Acceptance criteria are explicit and testable.
-  - [ ] Tests are added or updated for this task.
-  - [ ] Verification commands in `AGENTS.md` pass.
+  - [x] Behavior is implemented and mapped to source requirements.
+  - [x] Acceptance criteria are explicit and testable.
+  - [x] Tests are added or updated for this task.
+  - [x] Verification commands in `AGENTS.md` pass.
 
 ### Open Questions
 - [x] Q01: Dashboard tab naming for test-data decision flow resolved as `Batch Decision`.
