@@ -600,3 +600,14 @@
   - full local runner smoke could not run because `torch` is not installed in this environment
 - Remaining close step for P1B:
   - user-side Colab verification after pull using the latest batch decision artifacts and dashboard static server
+
+## 34) Continuation update - 2026-03-11 (P1B Colab verification completed)
+- User executed the P1B verification targets in Colab:
+  - `python3 -m pytest -q tests/dashboard_bridge/test_export_batch_decision_state.py tests/batch_decision/test_runner_full_run.py`: PASS (`3 passed`)
+  - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --run`: PASS
+- Full run output refreshed both report artifacts and dashboard bridge state:
+  - `total_events=75`
+  - `decision_counts={'normal': 0, 'warn': 3, 'anomaly': 72}`
+  - `dashboard_json=/content/AnomalyDetection/training_dashboard/data/batch-decision-state.json`
+  - confirmed file exists (`17K`)
+- P1B status promoted to complete based on Colab exporter tests, runner tests, and full dashboard bridge generation evidence.
