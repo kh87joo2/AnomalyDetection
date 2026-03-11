@@ -110,5 +110,4 @@ def test_runner_requires_dry_run_flag(tmp_path: Path, capsys) -> None:
     rc = main(["--config", str(cfg_path)])
     captured = capsys.readouterr()
     assert rc == 2
-    assert "validation-only mode" in captured.err
-
+    assert "requires one mode flag" in captured.err

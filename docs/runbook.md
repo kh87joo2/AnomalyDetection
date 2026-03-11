@@ -102,3 +102,25 @@ It still does not apply decision thresholds or export reports yet.
    - pytest passes for the scoring engine and score-only runner tests
    - the CLI prints `batch_decision score-only run completed`
    - stream window counts and sample score values are printed for the configured inputs
+
+## Phase 3A Decision and Reporting validation
+This stage validates threshold-based decisions, reason fields, and JSON/CSV/chart exports.
+
+1. Pull the latest `main` in Colab:
+   - `cd /content/AnomalyDetection`
+   - `git checkout main`
+   - `git pull --ff-only origin main`
+2. Install runtime and test dependencies:
+   - `python3 -m pip install -r requirements.txt -r requirements-dev.txt`
+3. Run the decision/reporting tests:
+   - `python3 -m pytest -q tests/batch_decision/test_decision_engine.py tests/batch_decision/test_reporting.py tests/batch_decision/test_runner_full_run.py tests/batch_decision/test_runner_skeleton.py`
+4. Before the full CLI run, confirm `configs/batch_decision_runtime_colab.yaml` points to real test files that match your trained artifacts:
+   - `run.input_paths.patchtst`
+   - `run.input_paths.swinmae`
+5. Run the full batch decision path:
+   - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --run`
+6. Expected result:
+   - pytest passes for decision/reporting and full runner tests
+   - the CLI prints `batch_decision run completed`
+   - `decision_counts` is printed
+   - output directory contains `decision_report.json`, `decision_events.csv`, and `chart_payload.json`

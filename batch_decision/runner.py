@@ -28,6 +28,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Run preprocess + batch scoring only (no decision/report export yet).",
     )
+    parser.add_argument(
+        "--run",
+        action="store_true",
+        help="Run scoring + decision + report export.",
+    )
     return parser.parse_args(argv)
 
 
@@ -201,24 +206,64 @@ def run_score_only(config_path: Path) -> BatchRunRequest:
     return request
 
 
+def run_full_batch(config_path: Path) -> BatchRunRequest:
+    runtime_config = load_yaml_config(config_path.resolve())
+    request = validate_runtime_config(runtime_config, config_path=config_path.resolve())
+
+    from batch_decision.decision_engine import decide
+    from batch_decision.reporting import export_report
+    from batch_decision.scoring_engine import score_batch_request
+
+    score_payload = score_batch_request(
+        request,
+        runtime_config=runtime_config,
+        runtime_config_path=config_path.resolve(),
+    )
+    result = decide(
+        score_payload,
+        thresholds_path=request.artifacts.thresholds_path,
+    )
+
+    output_dir = request.output_dir or f"artifacts/batch_decision/{request.run_id}"
+    artifacts = export_report(result, output_dir=output_dir)
+
+    print("batch_decision run completed")
+    print(f"run_id={result.run_id}")
+    print(f"stream={result.stream}")
+    print(f"total_events={result.summary['total_events']}")
+    print(f"decision_counts={result.summary['decision_counts']}")
+    print(f"report_json={artifacts.report_json_path}")
+    print(f"events_csv={artifacts.events_csv_path}")
+    print(f"chart_json={artifacts.chart_json_path}")
+    return request
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    if args.dry_run and args.score_only:
-        print("Choose exactly one mode: --dry-run or --score-only.", file=sys.stderr)
+    mode_count = int(bool(args.dry_run)) + int(bool(args.score_only)) + int(bool(args.run))
+    if mode_count > 1:
+        print("Choose exactly one mode: --dry-run, --score-only, or --run.", file=sys.stderr)
         return 2
-    if not args.dry_run and not args.score_only:
+    if mode_count == 0:
         print(
-            "P0B skeleton currently supports validation-only mode. Use --dry-run or --score-only.",
+            "Batch runner requires one mode flag: --dry-run, --score-only, or --run.",
             file=sys.stderr,
         )
         return 2
     try:
         if args.dry_run:
             run_dry_run(config_path=args.config)
-        else:
+        elif args.score_only:
             run_score_only(config_path=args.config)
+        else:
+            run_full_batch(config_path=args.config)
     except (ConfigError, FileNotFoundError, ValueError, RuntimeError) as exc:
-        prefix = "config validation failed" if args.dry_run else "score-only failed"
+        if args.dry_run:
+            prefix = "config validation failed"
+        elif args.score_only:
+            prefix = "score-only failed"
+        else:
+            prefix = "batch run failed"
         print(f"{prefix}: {exc}", file=sys.stderr)
         return 1
     return 0

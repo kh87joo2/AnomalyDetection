@@ -7,6 +7,7 @@ from typing import Any, Literal
 import numpy as np
 
 StreamName = Literal["patchtst", "swinmae", "dual"]
+DecisionLabel = Literal["normal", "warn", "anomaly"]
 
 
 @dataclass(frozen=True)
@@ -89,3 +90,42 @@ class BatchScorePayload:
     patchtst_records: list[WindowScore] = field(default_factory=list)
     swinmae_records: list[WindowScore] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ThresholdSpec:
+    warn: float
+    anomaly: float
+
+
+@dataclass(frozen=True)
+class DecisionEvent:
+    event_id: str
+    stream: StreamName
+    timestamp: str | None
+    window_index: int
+    decision: DecisionLabel
+    reason: str
+    thresholds: ThresholdSpec
+    fused_score: float
+    stream_scores: dict[str, float]
+    file_ids: dict[str, str]
+    aux: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class BatchDecisionResult:
+    run_id: str
+    stream: StreamName
+    events: list[DecisionEvent]
+    summary: dict[str, Any]
+    chart_payload: dict[str, Any]
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ReportArtifacts:
+    output_dir: Path
+    report_json_path: Path
+    events_csv_path: Path
+    chart_json_path: Path
