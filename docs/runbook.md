@@ -44,6 +44,32 @@
 - Install compatible CUDA PyTorch build.
 - Run the same commands used in Colab.
 
+## Phase 3A Local GPU migration profile
+This stage prepares the same batch decision contracts for a local GPU workstation after Colab validation is complete.
+
+1. Create a fresh venv on the local machine:
+   - `python3 -m venv .venv`
+   - `source .venv/bin/activate`
+   - `python3 -m pip install -r requirements.txt -r requirements-dev.txt`
+2. Confirm the validated artifacts exist locally:
+   - `checkpoints/patchtst_ssl.pt`
+   - `checkpoints/swinmae_ssl.pt`
+   - `artifacts/scaler_fdc.json`
+   - `artifacts/thresholds/batch_decision_thresholds.json`
+3. Place test input files at the local profile paths or edit only the config paths:
+   - `runtime_inputs/fdc/test_fdc.csv`
+   - `runtime_inputs/vibration/test_vibration.csv`
+4. Validate the local GPU profile:
+   - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_local_gpu.yaml --dry-run`
+5. Run the local batch decision path:
+   - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_local_gpu.yaml --run`
+6. Expected result:
+   - the same report contract as Colab is generated
+   - `artifacts/batch_decision/local_gpu_validation/` contains `decision_report.json`, `decision_events.csv`, and `chart_payload.json`
+   - `training_dashboard/data/batch-decision-state.json` is refreshed for the dashboard
+7. Migration rule:
+   - device and path changes stay in config files only; model/scoring/reporting code remains unchanged
+
 ## Phase 3A Batch Decision Colab profile
 This stage validates the Colab execution profile and runner contract only.
 It does not run real batch scoring yet; import/preprocess/scoring arrive in `P0D` and `P0E`.

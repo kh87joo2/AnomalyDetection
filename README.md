@@ -137,3 +137,12 @@ aux = out["aux"]         # diagnostics
 ## Local CUDA PC migration
 
 Use the same config and command lines. Only ensure CUDA-compatible PyTorch is installed on the target PC.
+
+For the batch decision runtime, use the dedicated local GPU profile:
+
+```bash
+python3 -m batch_decision.runner --config configs/batch_decision_runtime_local_gpu.yaml --dry-run
+python3 -m batch_decision.runner --config configs/batch_decision_runtime_local_gpu.yaml --run
+```
+
+The local GPU profile keeps the same artifact/report contracts as Colab and only changes path/environment assumptions in config.

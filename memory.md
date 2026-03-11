@@ -611,3 +611,23 @@
   - `dashboard_json=/content/AnomalyDetection/training_dashboard/data/batch-decision-state.json`
   - confirmed file exists (`17K`)
 - P1B status promoted to complete based on Colab exporter tests, runner tests, and full dashboard bridge generation evidence.
+
+## 35) Continuation update - 2026-03-11 (P1C local GPU migration profile ready)
+- Implemented the Phase 3A P1C local GPU migration readiness slice:
+  - `configs/batch_decision_runtime_local_gpu.yaml`
+  - `tests/batch_decision/test_local_gpu_profile.py`
+  - `docs/runbook.md`
+  - `README.md`
+- Added a dedicated local GPU batch runtime profile that keeps the same `run`/`artifact_paths`/`preprocess` contract as the validated Colab profile and changes only:
+  - `environment.profile`
+  - `environment.expected_cwd`
+  - local example input paths
+  - local output directory
+- Local verification completed:
+  - `python3 -m py_compile tests/batch_decision/test_local_gpu_profile.py`: PASS
+  - manual YAML contract comparison between Colab and local GPU profiles: PASS
+- Local blockers remain:
+  - `python3 -m pytest tests/batch_decision/test_local_gpu_profile.py` could not run because `pytest` is not installed
+  - importing `batch_decision.runner` for a local profile smoke failed because `numpy` is not installed in this environment
+- Remaining close step for P1C:
+  - user-side Colab verification of the new profile contract and runbook flow

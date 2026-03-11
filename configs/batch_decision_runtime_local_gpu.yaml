@@ -1,0 +1,24 @@
+environment:
+  profile: local_gpu
+  expected_cwd: /path/to/AnomalyDetection
+  validation_stage: p1c_local_gpu_migration
+  notes:
+    - Create a fresh venv on the local GPU workstation before running.
+    - Keep artifact and report schema identical to the validated Colab profile.
+
+run:
+  run_id: batch_decision_local_gpu_validation
+  stream: dual
+  input_paths:
+    patchtst: runtime_inputs/fdc/test_fdc.csv
+    swinmae: runtime_inputs/vibration/test_vibration.csv
+  artifact_paths:
+    thresholds: artifacts/thresholds/batch_decision_thresholds.json
+    patchtst_checkpoint: checkpoints/patchtst_ssl.pt
+    swinmae_checkpoint: checkpoints/swinmae_ssl.pt
+    scaler: artifacts/scaler_fdc.json
+  output_dir: artifacts/batch_decision/local_gpu_validation
+
+preprocess:
+  patchtst_config: configs/patchtst_ssl.yaml
+  swinmae_config: configs/swinmae_ssl.yaml
