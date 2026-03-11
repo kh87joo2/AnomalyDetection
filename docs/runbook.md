@@ -70,6 +70,79 @@ This stage prepares the same batch decision contracts for a local GPU workstatio
 7. Migration rule:
    - device and path changes stay in config files only; model/scoring/reporting code remains unchanged
 
+## Phase 3A Local retrain-first workflow
+Use this flow when the local GPU workstation will generate fresh training artifacts instead of copying Colab outputs.
+
+1. Create local training config copies:
+   - `cp configs/patchtst_ssl.yaml configs/patchtst_ssl_local_train.yaml`
+   - `cp configs/swinmae_ssl.yaml configs/swinmae_ssl_local_train.yaml`
+2. Edit `configs/patchtst_ssl_local_train.yaml` for real FDC training data:
+
+```yaml
+device:
+  prefer_cuda: true
+  amp: true
+
+logging:
+  log_dir: runs/patchtst_ssl
+  checkpoint_path: checkpoints/patchtst_ssl.pt
+
+data:
+  source: csv
+  path: /your/local/train/fdc/*.csv
+  timestamp_col: timestamp
+  seq_len: 512
+  seq_stride: 256
+  normalization: robust
+```
+
+3. Edit `configs/swinmae_ssl_local_train.yaml` for real vibration training data:
+
+```yaml
+device:
+  prefer_cuda: true
+  amp: true
+
+logging:
+  log_dir: runs/swinmae_ssl
+  checkpoint_path: checkpoints/swinmae_ssl.pt
+
+data:
+  source: csv
+  path: /your/local/train/vibration/*.csv
+  timestamp_col: timestamp
+  fs: 2000
+  win_sec: 2.0
+  win_stride_sec: 1.0
+```
+
+4. Run local training:
+   - `python -m trainers.train_patchtst_ssl --config configs/patchtst_ssl_local_train.yaml`
+   - `python -m trainers.train_swinmae_ssl --config configs/swinmae_ssl_local_train.yaml`
+5. Validate local training outputs:
+   - `python -m pipelines.validate_training_outputs --repo-root . --patch-checkpoint checkpoints/patchtst_ssl.pt --swin-checkpoint checkpoints/swinmae_ssl.pt --scaler-path artifacts/scaler_fdc.json --runs-dir runs --patch-config configs/patchtst_ssl_local_train.yaml --swin-config configs/swinmae_ssl_local_train.yaml`
+6. Update the batch runtime profile to reuse those exact training-time preprocess configs:
+
+```yaml
+run:
+  input_paths:
+    patchtst: runtime_inputs/fdc/test_fdc.csv
+    swinmae: runtime_inputs/vibration/test_vibration.csv
+
+preprocess:
+  patchtst_config: configs/patchtst_ssl_local_train.yaml
+  swinmae_config: configs/swinmae_ssl_local_train.yaml
+```
+
+7. Place test data in:
+   - `runtime_inputs/fdc/test_fdc.csv`
+   - `runtime_inputs/vibration/test_vibration.csv`
+8. Run local batch inference:
+   - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_local_gpu.yaml --dry-run`
+   - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_local_gpu.yaml --run`
+9. Optional dashboard preview:
+   - `python -m http.server 8765 --directory training_dashboard`
+
 ## Phase 3A Batch Decision Colab profile
 This stage validates the Colab execution profile and runner contract only.
 It does not run real batch scoring yet; import/preprocess/scoring arrive in `P0D` and `P0E`.

@@ -146,3 +146,14 @@ python3 -m batch_decision.runner --config configs/batch_decision_runtime_local_g
 ```
 
 The local GPU profile keeps the same artifact/report contracts as Colab and only changes path/environment assumptions in config.
+
+If you retrain on the local GPU machine from scratch:
+
+1. Copy the base training configs:
+   - `configs/patchtst_ssl.yaml -> configs/patchtst_ssl_local_train.yaml`
+   - `configs/swinmae_ssl.yaml -> configs/swinmae_ssl_local_train.yaml`
+2. Change `data.source` to `csv` and point `data.path` to the real local training files.
+3. Train both models with the local configs.
+4. Point `configs/batch_decision_runtime_local_gpu.yaml` `preprocess.patchtst_config` and `preprocess.swinmae_config` back to those exact local training configs.
+
+The detailed step-by-step retrain-first flow is documented in [docs/runbook.md](/home/userkh/workspace/ML_test/anomalydetection/docs/runbook.md).

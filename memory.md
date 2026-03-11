@@ -643,3 +643,14 @@
 - Note from Colab workspace:
   - `configs/batch_decision_runtime_colab.yaml` was locally modified in Colab before pull (`M`), which is expected from prior test-path edits and does not affect the committed repository state.
 - P1C status promoted to complete based on Colab profile tests and dry-run evidence.
+
+## 37) Continuation update - 2026-03-11 (local retrain-first runbook examples added)
+- Added concrete local retrain-first guidance for the post-P1 workflow:
+  - `docs/runbook.md`
+  - `README.md`
+- Documented:
+  - copying base training configs into `*_local_train.yaml`
+  - switching `data.source` to `csv`
+  - filling real local training paths
+  - validating fresh training outputs
+  - pointing `configs/batch_decision_runtime_local_gpu.yaml` preprocess references back to the exact local training configs before running batch tests
