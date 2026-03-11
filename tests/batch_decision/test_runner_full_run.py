@@ -112,12 +112,37 @@ def test_runner_full_run_exports_decision_artifacts(
     }
     runtime_cfg_path = tmp_path / "batch_runtime.yaml"
     _write_yaml(runtime_cfg_path, runtime_cfg)
+    _write_json(
+        tmp_path / "training_dashboard" / "data" / "dashboard-layout.json",
+        {
+            "meta": {"title": "Dashboard"},
+            "views": [
+                {
+                    "id": "batch-decision",
+                    "name": "Batch Decision",
+                    "nodes": [
+                        {"id": "batch-orchestrator"},
+                        {"id": "batch-import"},
+                        {"id": "batch-dqvl"},
+                        {"id": "batch-patchtst"},
+                        {"id": "batch-swinmae"},
+                        {"id": "batch-decision"},
+                        {"id": "batch-report"},
+                        {"id": "batch-bridge"},
+                    ],
+                    "connections": [],
+                }
+            ],
+        },
+    )
 
     rc = main(["--config", str(runtime_cfg_path), "--run"])
     captured = capsys.readouterr()
 
     assert rc == 0
     assert "batch_decision run completed" in captured.out
+    assert "dashboard_json=" in captured.out
     assert (out_dir / "decision_report.json").exists()
     assert (out_dir / "decision_events.csv").exists()
     assert (out_dir / "chart_payload.json").exists()
+    assert (tmp_path / "training_dashboard" / "data" / "batch-decision-state.json").exists()

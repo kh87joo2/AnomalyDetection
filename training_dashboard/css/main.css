@@ -195,6 +195,10 @@ h1 {
   flex: 0 0 auto;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
 .insight-panel .panel-card:first-child {
   flex: 0 0 auto;
 }
@@ -363,6 +367,117 @@ h1 {
   gap: 7px;
 }
 
+.decision-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.decision-summary-card {
+  border: 1px solid rgba(104, 145, 220, 0.34);
+  border-radius: 8px;
+  background: rgba(10, 20, 41, 0.9);
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.decision-summary-card[data-state="normal"] {
+  border-color: rgba(114, 243, 186, 0.55);
+}
+
+.decision-summary-card[data-state="warn"] {
+  border-color: rgba(255, 159, 67, 0.6);
+}
+
+.decision-summary-card[data-state="anomaly"] {
+  border-color: rgba(255, 91, 122, 0.62);
+}
+
+.decision-summary-label {
+  margin: 0;
+  color: rgba(191, 208, 236, 0.95);
+  font: 600 0.64rem "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.decision-summary-value {
+  font: 700 0.84rem "IBM Plex Mono", monospace;
+  color: #eef8ff;
+}
+
+.decision-event-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.decision-event-item {
+  border: 1px solid rgba(104, 145, 220, 0.34);
+  border-radius: 8px;
+  background: rgba(10, 20, 41, 0.9);
+  padding: 8px;
+  display: grid;
+  gap: 5px;
+}
+
+.decision-event-item[data-state="normal"] {
+  border-color: rgba(114, 243, 186, 0.55);
+}
+
+.decision-event-item[data-state="warn"] {
+  border-color: rgba(255, 159, 67, 0.58);
+}
+
+.decision-event-item[data-state="anomaly"] {
+  border-color: rgba(255, 91, 122, 0.62);
+}
+
+.decision-event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.decision-event-badge,
+.decision-event-score,
+.decision-event-meta,
+.decision-event-reason {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.decision-event-badge {
+  border: 1px solid rgba(124, 220, 255, 0.42);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.decision-event-score {
+  color: #ffcd63;
+  font-size: 0.68rem;
+}
+
+.decision-event-meta {
+  margin: 0;
+  color: rgba(191, 208, 236, 0.95);
+  font-size: 0.66rem;
+}
+
+.decision-event-reason {
+  margin: 0;
+  color: rgba(163, 183, 220, 0.95);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
 .quick-link-row {
   border: 1px solid rgba(104, 145, 220, 0.34);
   border-radius: 8px;
@@ -458,6 +573,10 @@ h1 {
   border-radius: 9px;
   background: rgba(8, 16, 33, 0.9);
   padding: 8px;
+}
+
+.loss-card-wide canvas {
+  height: 180px;
 }
 
 .loss-card h3 {
@@ -582,6 +701,10 @@ h1 {
   }
 
   .readiness-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .decision-summary-grid {
     grid-template-columns: 1fr;
   }
 

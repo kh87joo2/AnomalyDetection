@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Training Pipeline Dashboard</title>
+    <title>Anomaly Pipeline Dashboard</title>
     <link rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main.css?v=20260223f" />
+    <link rel="stylesheet" href="css/main.css?v=20260311b" />
     <link rel="stylesheet" href="css/nodes.css?v=20260223f" />
     <link rel="stylesheet" href="css/animations.css?v=20260223f" />
   </head>
@@ -19,7 +19,7 @@
     <div class="app-shell">
       <header class="top-bar">
         <div class="title-block">
-          <p class="eyebrow">Training observability</p>
+          <p class="eyebrow">Platform observability</p>
           <h1 id="dashboard-title">Training Pipeline Dashboard</h1>
           <p id="dashboard-subtitle" class="subtitle">
             PatchTST + SwinMAE Node Graph
@@ -49,7 +49,7 @@
           </section>
 
           <aside class="insight-panel" aria-label="Checklist and metrics panel">
-            <section class="panel-card">
+            <section id="training-checklist-card" class="panel-card panel-mode-card">
               <div class="panel-header">
                 <h2>Validation Checklist</h2>
                 <span id="checklist-summary" class="panel-badge">-/-</span>
@@ -57,7 +57,7 @@
               <div id="checklist-list" class="checklist-list"></div>
             </section>
 
-            <section class="panel-card">
+            <section id="training-comparison-card" class="panel-card panel-mode-card">
               <div class="panel-header">
                 <h2>Run Comparison</h2>
               </div>
@@ -75,14 +75,14 @@
               <div id="comparison-metrics" class="comparison-grid"></div>
             </section>
 
-            <section class="panel-card">
+            <section id="training-readiness-card" class="panel-card panel-mode-card">
               <div class="panel-header">
                 <h2>Readiness</h2>
               </div>
               <div id="readiness-grid" class="readiness-grid"></div>
             </section>
 
-            <section class="panel-card">
+            <section id="training-loss-card" class="panel-card panel-mode-card">
               <div class="panel-header">
                 <h2>Loss Trends</h2>
               </div>
@@ -98,11 +98,38 @@
               </div>
             </section>
 
-            <section class="panel-card">
+            <section id="training-links-card" class="panel-card panel-mode-card">
               <div class="panel-header">
                 <h2>Quick Links</h2>
               </div>
               <div id="quick-links-list" class="quick-links-list"></div>
+            </section>
+
+            <section id="batch-summary-card" class="panel-card panel-mode-card is-hidden">
+              <div class="panel-header">
+                <h2>Decision Summary</h2>
+                <span id="batch-total-events" class="panel-badge">0</span>
+              </div>
+              <div id="batch-summary-grid" class="decision-summary-grid"></div>
+              <p id="batch-summary-note" class="panel-empty"></p>
+              <div id="batch-events-preview" class="decision-event-list"></div>
+            </section>
+
+            <section id="batch-chart-card" class="panel-card panel-mode-card is-hidden">
+              <div class="panel-header">
+                <h2>Decision Trend</h2>
+              </div>
+              <article class="loss-card loss-card-wide">
+                <h3>Fused Score vs Thresholds</h3>
+                <canvas id="batch-decision-chart-canvas" width="320" height="180"></canvas>
+              </article>
+            </section>
+
+            <section id="batch-links-card" class="panel-card panel-mode-card is-hidden">
+              <div class="panel-header">
+                <h2>Decision Artifacts</h2>
+              </div>
+              <div id="batch-links-list" class="quick-links-list"></div>
             </section>
           </aside>
         </div>
@@ -116,6 +143,6 @@
       </footer>
     </div>
 
-    <script type="module" src="js/app.js?v=20260223f"></script>
+    <script type="module" src="js/app.js?v=20260311b"></script>
   </body>
 </html>

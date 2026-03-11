@@ -95,6 +95,21 @@ It does not run real test-data scoring yet.
 - dry-run prints `batch_decision dry-run validation passed`
 - pytest passes for the runner skeleton and Colab profile tests
 
+## Dashboard views
+
+The static dashboard now has separate views for training and imported test-data decisions.
+
+- `Training Flow` and `Artifact Gate` read `training_dashboard/data/dashboard-state.json`
+- `Batch Decision` reads `training_dashboard/data/batch-decision-state.json`
+
+When you run:
+
+```bash
+python -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --run
+```
+
+the batch decision report artifacts are written and the dashboard bridge state is refreshed automatically.
+
 ## Notebooks and scoring example
 
 Colab notebooks:

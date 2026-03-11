@@ -124,3 +124,17 @@ This stage validates threshold-based decisions, reason fields, and JSON/CSV/char
    - the CLI prints `batch_decision run completed`
    - `decision_counts` is printed
    - output directory contains `decision_report.json`, `decision_events.csv`, and `chart_payload.json`
+   - dashboard bridge file is refreshed at `training_dashboard/data/batch-decision-state.json`
+
+## Phase 3A Dashboard bridge
+After a successful `--run`, the dashboard can visualize batch decision output in a separate tab.
+
+1. Confirm both runtime files exist:
+   - `training_dashboard/data/dashboard-state.json`
+   - `training_dashboard/data/batch-decision-state.json`
+2. Start the static dashboard server:
+   - `python -m http.server 8765 --directory training_dashboard`
+3. Open `http://127.0.0.1:8765`
+4. Use:
+   - `Training Flow` / `Artifact Gate` tabs for training artifacts
+   - `Batch Decision` tab for imported test-data scoring and threshold overlays

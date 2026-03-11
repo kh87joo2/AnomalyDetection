@@ -73,6 +73,15 @@ def _resolve_path(raw_path: str, config_path: Path | None) -> Path:
     return candidates[0]
 
 
+def _infer_repo_root(config_path: Path) -> Path:
+    resolved = config_path.resolve()
+    search_roots = [resolved.parent, *resolved.parents]
+    for candidate in search_roots:
+        if (candidate / "training_dashboard").exists():
+            return candidate
+    return resolved.parent
+
+
 def _validate_input_paths(stream: str, input_paths: InputPaths) -> None:
     if stream == "patchtst" and not input_paths.patchtst:
         raise ConfigError("stream=patchtst requires run.input_paths.patchtst")
@@ -213,6 +222,7 @@ def run_full_batch(config_path: Path) -> BatchRunRequest:
     from batch_decision.decision_engine import decide
     from batch_decision.reporting import export_report
     from batch_decision.scoring_engine import score_batch_request
+    from dashboard_bridge.export_batch_decision_state import export_batch_decision_state
 
     score_payload = score_batch_request(
         request,
@@ -226,6 +236,19 @@ def run_full_batch(config_path: Path) -> BatchRunRequest:
 
     output_dir = request.output_dir or f"artifacts/batch_decision/{request.run_id}"
     artifacts = export_report(result, output_dir=output_dir)
+    repo_root = _infer_repo_root(config_path.resolve())
+    dashboard_state_path: Path | None = None
+    layout_path = repo_root / "training_dashboard" / "data" / "dashboard-layout.json"
+    if layout_path.exists():
+        export_batch_decision_state(
+            repo_root=repo_root,
+            out_path=Path("training_dashboard/data/batch-decision-state.json"),
+            report_json_path=artifacts.report_json_path,
+            layout_path=Path("training_dashboard/data/dashboard-layout.json"),
+        )
+        dashboard_state_path = (
+            repo_root / "training_dashboard" / "data" / "batch-decision-state.json"
+        )
 
     print("batch_decision run completed")
     print(f"run_id={result.run_id}")
@@ -235,6 +258,8 @@ def run_full_batch(config_path: Path) -> BatchRunRequest:
     print(f"report_json={artifacts.report_json_path}")
     print(f"events_csv={artifacts.events_csv_path}")
     print(f"chart_json={artifacts.chart_json_path}")
+    if dashboard_state_path is not None:
+        print(f"dashboard_json={dashboard_state_path}")
     return request
 
 

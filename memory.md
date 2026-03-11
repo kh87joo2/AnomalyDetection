@@ -573,3 +573,30 @@
     - `artifacts/batch_decision/colab_validation/decision_events.csv`
     - `artifacts/batch_decision/colab_validation/chart_payload.json`
 - P1A status promoted to complete based on Colab full-run evidence.
+
+## 33) Continuation update - 2026-03-11 (P1B dashboard bridge implementation ready)
+- Implemented the Phase 3A P1B dashboard bridge and separate batch-decision view wiring:
+  - `dashboard_bridge/export_batch_decision_state.py`
+  - `tests/dashboard_bridge/test_export_batch_decision_state.py`
+  - `training_dashboard/data/dashboard-layout.json`
+  - `training_dashboard/js/app.js`
+  - `training_dashboard/js/panels.js`
+  - `training_dashboard/css/main.css`
+  - `training_dashboard/index.html`
+  - `batch_decision/runner.py`
+- Added a dedicated `Batch Decision` tab/view to the static dashboard with:
+  - batch-specific node graph
+  - summary cards for normal/warn/anomaly and fused-score aggregates
+  - event preview list
+  - overlaid score/threshold chart using `chart_payload`
+  - artifact links for `decision_report.json`, `decision_events.csv`, `chart_payload.json`, and `batch-decision-state.json`
+- Full batch runner now refreshes `training_dashboard/data/batch-decision-state.json` automatically after `--run` when the dashboard layout exists under the inferred repo root.
+- Local verification completed:
+  - `python3 -m py_compile batch_decision/runner.py dashboard_bridge/export_batch_decision_state.py tests/dashboard_bridge/test_export_batch_decision_state.py tests/batch_decision/test_runner_full_run.py`: PASS
+  - `node --check training_dashboard/js/app.js && node --check training_dashboard/js/panels.js`: PASS
+  - synthetic exporter smoke via `export_batch_decision_state(...)`: PASS (`batch-decision-state.json` generated in a temporary repo fixture)
+- Local blockers remain:
+  - `python3 -m pytest ...` could not run because `pytest` is not installed in this environment
+  - full local runner smoke could not run because `torch` is not installed in this environment
+- Remaining close step for P1B:
+  - user-side Colab verification after pull using the latest batch decision artifacts and dashboard static server

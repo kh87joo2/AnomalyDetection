@@ -22,11 +22,12 @@ const TYPE_META = {
 
 const state = {
   layout: null,
-  runtimeLive: null,
+  trainingRuntimeLive: null,
   runtime: null,
   runHistoryIndex: [],
   runSnapshots: new Map(),
   activeViewIndex: 0,
+  runComparisonHandlersBound: false,
   activeTypes: new Set(Object.keys(TYPE_META)),
   nodeMap: new Map(),
   nodeElements: new Map(),
@@ -58,6 +59,20 @@ const currentRunSelectEl = document.getElementById("current-run-select");
 const baselineRunSelectEl = document.getElementById("baseline-run-select");
 const comparisonMetricsEl = document.getElementById("comparison-metrics");
 const comparisonNoteEl = document.getElementById("comparison-note");
+const trainingChecklistCardEl = document.getElementById("training-checklist-card");
+const trainingComparisonCardEl = document.getElementById("training-comparison-card");
+const trainingReadinessCardEl = document.getElementById("training-readiness-card");
+const trainingLossCardEl = document.getElementById("training-loss-card");
+const trainingLinksCardEl = document.getElementById("training-links-card");
+const batchSummaryCardEl = document.getElementById("batch-summary-card");
+const batchChartCardEl = document.getElementById("batch-chart-card");
+const batchLinksCardEl = document.getElementById("batch-links-card");
+const batchTotalEventsEl = document.getElementById("batch-total-events");
+const batchSummaryGridEl = document.getElementById("batch-summary-grid");
+const batchSummaryNoteEl = document.getElementById("batch-summary-note");
+const batchEventsPreviewEl = document.getElementById("batch-events-preview");
+const batchChartCanvasEl = document.getElementById("batch-decision-chart-canvas");
+const batchLinksEl = document.getElementById("batch-links-list");
 
 const { lineGroup } = setupConnectionLayer(connectionLayer);
 const LIVE_RUN_KEY = "__live__";
@@ -68,6 +83,33 @@ function clamp(value, min, max) {
 
 function getCurrentView() {
   return state.layout.views[state.activeViewIndex];
+}
+
+function getViewMode(view) {
+  return view?.mode === "batch-decision" ? "batch-decision" : "training";
+}
+
+function getCurrentViewMode() {
+  return getViewMode(getCurrentView());
+}
+
+function getViewRuntimePath(view) {
+  return view?.runtime_file || "./data/dashboard-state.json";
+}
+
+function getViewRunHistoryPath(view) {
+  return view?.run_history_file || "./data/runs/index.json";
+}
+
+function buildSiblingPath(filePath, childName) {
+  if (typeof filePath !== "string" || !filePath) {
+    return childName;
+  }
+  const clean = filePath.replace(/\\/g, "/");
+  const parts = clean.split("/");
+  parts.pop();
+  parts.push(childName);
+  return parts.join("/");
 }
 
 function setStatus(text) {
@@ -125,12 +167,10 @@ function renderTabs() {
     button.setAttribute("aria-selected", index === state.activeViewIndex ? "true" : "false");
 
     button.addEventListener("click", () => {
-      state.activeViewIndex = index;
-      state.transform = { x: 70, y: 50, scale: 0.9 };
-      renderTabs();
-      renderView();
-      applyTransform();
-      setStatus(`Switched to ${item.name}`);
+      activateView(index).catch((error) => {
+        setStatus(`Failed to switch to ${item.name}.`);
+        console.error(error);
+      });
     });
 
     fragment.appendChild(button);
@@ -283,8 +323,8 @@ async function loadLayoutData() {
   return response.json();
 }
 
-async function loadRuntimeData() {
-  const response = await fetch("./data/dashboard-state.json", {
+async function loadRuntimeData(runtimePath) {
+  const response = await fetch(runtimePath, {
     cache: "no-store"
   });
   if (!response.ok) {
@@ -293,8 +333,8 @@ async function loadRuntimeData() {
   return response.json();
 }
 
-async function loadRunHistoryIndex() {
-  const response = await fetch("./data/runs/index.json", {
+async function loadRunHistoryIndex(runHistoryPath) {
+  const response = await fetch(runHistoryPath, {
     cache: "no-store"
   });
   if (!response.ok) {
@@ -315,14 +355,32 @@ async function loadRunHistoryIndex() {
 }
 
 function renderRuntimePanels(runtimeState) {
+  const view = getCurrentView();
   renderDashboardPanels({
+    mode: getViewMode(view),
     runtimeState,
+    runtimeStatePath: getViewRuntimePath(view),
+    runHistoryPath: getViewRunHistoryPath(view),
+    trainingChecklistCardEl,
+    trainingComparisonCardEl,
+    trainingReadinessCardEl,
+    trainingLossCardEl,
+    trainingLinksCardEl,
+    batchSummaryCardEl,
+    batchChartCardEl,
+    batchLinksCardEl,
     checklistSummaryEl,
     checklistListEl,
     readinessGridEl,
     quickLinksEl,
     patchCanvasEl: patchLossCanvasEl,
-    swinCanvasEl: swinLossCanvasEl
+    swinCanvasEl: swinLossCanvasEl,
+    batchTotalEventsEl,
+    batchSummaryGridEl,
+    batchSummaryNoteEl,
+    batchEventsPreviewEl,
+    batchChartCanvasEl,
+    batchLinksEl
   });
 }
 
@@ -451,12 +509,14 @@ function fillSelectOptions(selectEl, options, selectedValue) {
 }
 
 async function loadRunSnapshot(entry) {
-  const cacheKey = entry.file;
+  const historyPath = getViewRunHistoryPath(getCurrentView());
+  const cacheKey = `${historyPath}::${entry.file}`;
   if (state.runSnapshots.has(cacheKey)) {
     return state.runSnapshots.get(cacheKey);
   }
 
-  const response = await fetch(`./data/runs/${entry.file}`, {
+  const snapshotPath = buildSiblingPath(historyPath, entry.file);
+  const response = await fetch(snapshotPath, {
     cache: "no-store"
   });
   if (!response.ok) {
@@ -469,7 +529,7 @@ async function loadRunSnapshot(entry) {
 
 async function resolveRuntimeBySelection(selectionValue) {
   if (selectionValue === LIVE_RUN_KEY) {
-    return state.runtimeLive;
+    return state.trainingRuntimeLive;
   }
 
   const entry = state.runHistoryIndex.find((item) => item.run_id === selectionValue);
@@ -480,10 +540,13 @@ async function resolveRuntimeBySelection(selectionValue) {
 }
 
 async function applyRunSelection() {
+  if (getCurrentViewMode() !== "training") {
+    return;
+  }
   const currentRuntime = await resolveRuntimeBySelection(currentRunSelectEl.value);
   const baselineRuntime = await resolveRuntimeBySelection(baselineRunSelectEl.value);
 
-  state.runtime = currentRuntime || state.runtimeLive;
+  state.runtime = currentRuntime || state.trainingRuntimeLive;
   renderRuntimePanels(state.runtime);
   applyNodeStatuses(getCurrentView());
   renderConnections({
@@ -504,18 +567,28 @@ async function applyRunSelection() {
 }
 
 async function initRunComparisonPanel() {
-  state.runHistoryIndex = await loadRunHistoryIndex();
+  if (getCurrentViewMode() !== "training") {
+    currentRunSelectEl.disabled = true;
+    baselineRunSelectEl.disabled = true;
+    fillSelectOptions(currentRunSelectEl, [{ value: "", label: "Batch decision view" }], "");
+    fillSelectOptions(baselineRunSelectEl, [{ value: "", label: "Batch decision view" }], "");
+    setComparisonRows(null, null);
+    comparisonNoteEl.textContent = "Run comparison is available in Training views only.";
+    return;
+  }
+
+  state.runHistoryIndex = await loadRunHistoryIndex(getViewRunHistoryPath(getCurrentView()));
 
   if (state.runHistoryIndex.length === 0) {
     currentRunSelectEl.disabled = true;
     baselineRunSelectEl.disabled = true;
     fillSelectOptions(
       currentRunSelectEl,
-      [{ value: LIVE_RUN_KEY, label: "live (dashboard-state.json)" }],
+      [{ value: LIVE_RUN_KEY, label: `live (${getViewRuntimePath(getCurrentView())})` }],
       LIVE_RUN_KEY
     );
     fillSelectOptions(baselineRunSelectEl, [{ value: "", label: "none" }], "");
-    setComparisonRows(state.runtimeLive, null);
+    setComparisonRows(state.trainingRuntimeLive, null);
     return;
   }
 
@@ -525,17 +598,20 @@ async function initRunComparisonPanel() {
       label: `${item.run_id} (${item.timestamp || "no-time"})`,
     })),
   ];
-  if (state.runtimeLive) {
-    currentOptions.unshift({ value: LIVE_RUN_KEY, label: "live (dashboard-state.json)" });
+  if (state.trainingRuntimeLive) {
+    currentOptions.unshift({
+      value: LIVE_RUN_KEY,
+      label: `live (${getViewRuntimePath(getCurrentView())})`,
+    });
   }
   const baselineOptions = state.runHistoryIndex.map((item) => ({
     value: item.run_id,
     label: `${item.run_id} (${item.timestamp || "no-time"})`,
   }));
 
-  const preferredCurrent = state.runtimeLive ? LIVE_RUN_KEY : baselineOptions[0]?.value || "";
+  const preferredCurrent = state.trainingRuntimeLive ? LIVE_RUN_KEY : baselineOptions[0]?.value || "";
   const preferredBaseline =
-    baselineOptions.find((item) => item.value !== state.runtimeLive?.meta?.run_id)?.value ||
+    baselineOptions.find((item) => item.value !== state.trainingRuntimeLive?.meta?.run_id)?.value ||
     baselineOptions[0]?.value ||
     "";
 
@@ -544,54 +620,80 @@ async function initRunComparisonPanel() {
   currentRunSelectEl.disabled = false;
   baselineRunSelectEl.disabled = baselineOptions.length === 0;
 
-  currentRunSelectEl.addEventListener("change", () => {
-    applyRunSelection().catch((error) => {
-      setStatus("Failed to load selected current run.");
-      console.error(error);
+  if (!state.runComparisonHandlersBound) {
+    currentRunSelectEl.addEventListener("change", () => {
+      applyRunSelection().catch((error) => {
+        setStatus("Failed to load selected current run.");
+        console.error(error);
+      });
     });
-  });
-  baselineRunSelectEl.addEventListener("change", () => {
-    applyRunSelection().catch((error) => {
-      setStatus("Failed to load selected baseline run.");
-      console.error(error);
+    baselineRunSelectEl.addEventListener("change", () => {
+      applyRunSelection().catch((error) => {
+        setStatus("Failed to load selected baseline run.");
+        console.error(error);
+      });
     });
-  });
+    state.runComparisonHandlersBound = true;
+  }
 
   await applyRunSelection();
 }
 
+async function activateView(index) {
+  state.activeViewIndex = index;
+  state.transform = { x: 70, y: 50, scale: 0.9 };
+  const view = getCurrentView();
+  const runtime = await loadRuntimeData(getViewRuntimePath(view));
+  state.runtime = runtime;
+  if (getViewMode(view) === "training") {
+    state.trainingRuntimeLive = runtime;
+  }
+
+  renderTabs();
+  renderView();
+  renderRuntimePanels(state.runtime);
+  applyTransform();
+
+  subtitleEl.textContent = view.subtitle || state.layout.meta?.subtitle || "Pipeline flow";
+  const runtimeDate = state.runtime?.meta?.timestamp || state.layout.meta?.date || "";
+  dateEl.textContent = formatDate(runtimeDate);
+
+  await initRunComparisonPanel();
+
+  if (getViewMode(view) === "batch-decision") {
+    const totalEvents = Number(state.runtime?.summary?.total_events || 0);
+    if (totalEvents > 0) {
+      setStatus(`Batch decision view ready. events ${totalEvents}.`);
+    } else {
+      setStatus("Batch decision view ready. runtime state not found yet.");
+    }
+    return;
+  }
+
+  const checklistCount = state.runtime?.checklist?.length || 0;
+  if (checklistCount > 0) {
+    const passed = state.runtime.checklist.filter((item) => item.passed).length;
+    setStatus(`Dashboard ready. checklist ${passed}/${checklistCount}`);
+  } else {
+    setStatus("Dashboard ready. runtime state not found; graph-only mode.");
+  }
+}
+
 async function init() {
   try {
-    const [layout, runtime] = await Promise.all([loadLayoutData(), loadRuntimeData()]);
+    const layout = await loadLayoutData();
     state.layout = layout;
-    state.runtimeLive = runtime;
-    state.runtime = runtime;
 
     if (!Array.isArray(state.layout.views) || state.layout.views.length === 0) {
       throw new Error("dashboard-layout.json must include at least one view.");
     }
 
-    titleEl.textContent = state.layout.meta?.title || "Training Pipeline Dashboard";
-    subtitleEl.textContent = state.layout.meta?.subtitle || "Training flow";
+    titleEl.textContent = state.layout.meta?.title || "Anomaly Pipeline Dashboard";
+    subtitleEl.textContent = state.layout.meta?.subtitle || "Pipeline flow";
 
-    const runtimeDate = state.runtime?.meta?.timestamp || "";
-    const layoutDate = state.layout.meta?.date || "";
-    dateEl.textContent = formatDate(runtimeDate || layoutDate);
-
-    renderTabs();
     renderLegend();
-    renderView();
-    renderRuntimePanels(state.runtime);
-    applyTransform();
     setupGraphInteractions();
-    await initRunComparisonPanel();
-    const checklistCount = state.runtime?.checklist?.length || 0;
-    if (checklistCount > 0) {
-      const passed = state.runtime.checklist.filter((item) => item.passed).length;
-      setStatus(`Dashboard ready. checklist ${passed}/${checklistCount}`);
-    } else {
-      setStatus("Dashboard ready. runtime state not found; graph-only mode.");
-    }
+    await activateView(state.activeViewIndex);
   } catch (error) {
     setStatus("Failed to initialize dashboard.");
     console.error(error);

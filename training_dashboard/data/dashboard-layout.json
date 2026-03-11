@@ -1,13 +1,17 @@
 {
   "meta": {
-    "title": "Training Pipeline Dashboard",
-    "subtitle": "PatchTST + SwinMAE Node Graph",
-    "date": "2026-02-22"
+    "title": "Anomaly Pipeline Dashboard",
+    "subtitle": "Training + Batch Decision Node Graphs",
+    "date": "2026-03-11"
   },
   "views": [
     {
       "id": "training-flow",
       "name": "Training Flow",
+      "mode": "training",
+      "subtitle": "PatchTST + SwinMAE training pipeline",
+      "runtime_file": "./data/dashboard-state.json",
+      "run_history_file": "./data/runs/index.json",
       "canvas": {
         "width": 1800,
         "height": 1080
@@ -126,6 +130,10 @@
     {
       "id": "artifact-gate",
       "name": "Artifact Gate",
+      "mode": "training",
+      "subtitle": "Training artifact validation gate",
+      "runtime_file": "./data/dashboard-state.json",
+      "run_history_file": "./data/runs/index.json",
       "canvas": {
         "width": 1800,
         "height": 1080
@@ -192,6 +200,127 @@
         { "id": "g2", "from": "scaler-check", "to": "release-ready" },
         { "id": "g3", "from": "runs-check", "to": "release-ready" },
         { "id": "g4", "from": "config-check", "to": "release-ready" }
+      ]
+    },
+    {
+      "id": "batch-decision",
+      "name": "Batch Decision",
+      "mode": "batch-decision",
+      "subtitle": "Imported test data scoring, thresholds, and report export",
+      "runtime_file": "./data/batch-decision-state.json",
+      "canvas": {
+        "width": 1800,
+        "height": 1080
+      },
+      "groups": [
+        {
+          "id": "batch-ingest-stage",
+          "label": "Input + Quality",
+          "x": 120,
+          "y": 210,
+          "width": 520,
+          "height": 430
+        },
+        {
+          "id": "batch-score-stage",
+          "label": "Model Scoring",
+          "x": 710,
+          "y": 210,
+          "width": 560,
+          "height": 430
+        },
+        {
+          "id": "batch-output-stage",
+          "label": "Decision + Dashboard Bridge",
+          "x": 1310,
+          "y": 210,
+          "width": 360,
+          "height": 430
+        }
+      ],
+      "nodes": [
+        {
+          "id": "batch-orchestrator",
+          "label": "Batch Orchestrator",
+          "subtitle": "Config + Run Control",
+          "type": "pi",
+          "x": 770,
+          "y": 80,
+          "icon": "BO"
+        },
+        {
+          "id": "batch-import",
+          "label": "Import Test Data",
+          "subtitle": "FDC + Vibration CSV",
+          "type": "function",
+          "x": 220,
+          "y": 320,
+          "icon": "IM"
+        },
+        {
+          "id": "batch-dqvl",
+          "label": "DQVL Gate",
+          "subtitle": "Malformed Input Filter",
+          "type": "function",
+          "x": 220,
+          "y": 500,
+          "icon": "DQ"
+        },
+        {
+          "id": "batch-patchtst",
+          "label": "PatchTST Score",
+          "subtitle": "FDC Windows",
+          "type": "agent",
+          "x": 830,
+          "y": 320,
+          "icon": "PT"
+        },
+        {
+          "id": "batch-swinmae",
+          "label": "SwinMAE Score",
+          "subtitle": "Vibration Windows",
+          "type": "agent",
+          "x": 830,
+          "y": 500,
+          "icon": "SW"
+        },
+        {
+          "id": "batch-decision",
+          "label": "Decision Engine",
+          "subtitle": "Normal / Warn / Anomaly",
+          "type": "function",
+          "x": 1410,
+          "y": 320,
+          "icon": "DE"
+        },
+        {
+          "id": "batch-report",
+          "label": "Report Export",
+          "subtitle": "JSON + CSV + Chart",
+          "type": "tool",
+          "x": 1410,
+          "y": 500,
+          "icon": "RP"
+        },
+        {
+          "id": "batch-bridge",
+          "label": "Dashboard Bridge",
+          "subtitle": "batch-decision-state.json",
+          "type": "tool",
+          "x": 1410,
+          "y": 680,
+          "icon": "DB"
+        }
+      ],
+      "connections": [
+        { "id": "b1", "from": "batch-orchestrator", "to": "batch-import" },
+        { "id": "b2", "from": "batch-import", "to": "batch-dqvl" },
+        { "id": "b3", "from": "batch-dqvl", "to": "batch-patchtst" },
+        { "id": "b4", "from": "batch-dqvl", "to": "batch-swinmae" },
+        { "id": "b5", "from": "batch-patchtst", "to": "batch-decision" },
+        { "id": "b6", "from": "batch-swinmae", "to": "batch-decision" },
+        { "id": "b7", "from": "batch-decision", "to": "batch-report" },
+        { "id": "b8", "from": "batch-report", "to": "batch-bridge" }
       ]
     }
   ]

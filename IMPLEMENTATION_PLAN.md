@@ -27,7 +27,7 @@ The Ralph loop managed plan section is appended or updated automatically.
 - [x] P0D: Implement test-data import + training-compatible preprocess/window builder.
 - [x] P0E: Integrate batch scoring with existing checkpoints/scaler/config.
 - [x] P1A: Implement decision engine + reporting exports (JSON/CSV + reason fields).
-- [ ] P1B: Implement dashboard bridge with separate test-data decision tab/view and overlaid score/threshold graph.
+- [-] P1B: Implement dashboard bridge with separate test-data decision tab/view and overlaid score/threshold graph.
 - [ ] P1C: Prepare local GPU migration profile (config-only toggles from Colab profile).
 
 ### Generated Specs
