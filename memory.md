@@ -551,3 +551,13 @@
   - user-side Colab verification after pull:
     - `python3 -m pytest -q tests/batch_decision/test_decision_engine.py tests/batch_decision/test_reporting.py tests/batch_decision/test_runner_full_run.py tests/batch_decision/test_runner_skeleton.py`
     - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --run`
+
+## 31) Continuation update - 2026-03-11 (raw vibration header compatibility fix)
+- User-side Colab validation exposed a real-input compatibility gap:
+  - raw vibration CSV used headers like `Time Stamp`, ` X-axis`, ` Y-axis`, ` Z-axis`
+  - existing vibration reader only accepted direct `timestamp|time` and `x|y|z` matches
+- Applied reader normalization fix in `datasets/readers/vib_reader.py`:
+  - trims whitespace
+  - normalizes header variants such as `Time Stamp` -> `timestamp`
+  - normalizes axis variants such as `X-axis` -> `x`
+- Added regression coverage in `tests/batch_decision/test_import_and_preprocess.py` for axis/timestamp header variants.

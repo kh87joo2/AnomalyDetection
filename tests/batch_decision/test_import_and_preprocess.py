@@ -154,6 +154,58 @@ def test_prepare_swinmae_batch_builds_windows_from_csv(
     assert batch.metadata["expected_fs"] == 64.0
 
 
+def test_prepare_swinmae_batch_accepts_axis_header_variants(
+    swinmae_smoke_config,
+    tmp_path: Path,
+) -> None:
+    csv_path = tmp_path / "vib_axis_variants.csv"
+    rows = ["Time Stamp, X-axis, Y-axis, Z-axis"]
+    for i in range(64):
+        rows.append(
+            f"2026-01-01T00:00:00.{i:03d},{0.1 + i * 0.01:.6f},{0.2 + i * 0.01:.6f},{0.3 + i * 0.01:.6f}"
+        )
+    csv_path.write_text("\n".join(rows), encoding="utf-8")
+
+    cfg = copy.deepcopy(swinmae_smoke_config)
+    cfg["data"].update(
+        {
+            "source": "csv",
+            "path": str(csv_path),
+            "timestamp_col": "timestamp",
+            "fs": 64,
+            "train_ratio": 0.5,
+            "win_sec": 0.5,
+            "win_stride_sec": 0.25,
+            "assume_actual_fs_equals_config": True,
+            "resample": {"enabled": False, "method": "linear"},
+        }
+    )
+    cfg["dqvl"] = {
+        "enabled": True,
+        "allow_sort_fix": False,
+        "report_dir": str(tmp_path / "dqvl_vib_variant"),
+        "hard_fail": {
+            "max_missing_ratio": 0.8,
+            "fs_tol": 1.0e-6,
+            "missing_fs": False,
+        },
+        "warn": {
+            "missing_ratio": 0.2,
+            "clipping_ratio": 1.0,
+            "flat_eps": 1.0e-8,
+            "flat_ratio": 1.0,
+            "rms_min": 1.0e-8,
+            "rms_max": 1000.0,
+        },
+    }
+
+    batch = prepare_swinmae_batch(cfg)
+    assert batch.stream == "swinmae"
+    assert batch.windows.shape[0] > 0
+    assert batch.windows.shape[-1] == 3
+    assert len(batch.window_anchor_timestamps) == batch.windows.shape[0]
+
+
 def test_prepare_swinmae_batch_rejects_missing_axis(
     swinmae_smoke_config,
     tmp_path: Path,
@@ -234,4 +286,3 @@ def test_prepare_swinmae_batch_rejects_missing_axis(
 
     with pytest.raises(BatchPreprocessError, match="No valid swinmae windows"):
         prepare_swinmae_batch(cfg)
-

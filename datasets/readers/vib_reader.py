@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Sequence
 
 import numpy as np
 import pandas as pd
 
-_TIMESTAMP_CANDIDATES = ("timestamp", "time")
+_TIMESTAMP_CANDIDATES = ("timestamp", "time", "timestampms")
 _AXIS_NAMES = ("x", "y", "z")
 
 
@@ -23,14 +24,21 @@ class VibReadResult:
     fs: float | None
 
 
+def _normalize_column_name(name: str) -> str:
+    cleaned = name.strip().lower()
+    cleaned = cleaned.replace("axis", "")
+    cleaned = re.sub(r"[^a-z0-9]+", "", cleaned)
+    return cleaned
+
+
 def _resolve_timestamp_column(columns: Sequence[str], timestamp_col: str | None) -> str | None:
     if timestamp_col:
         for col in columns:
-            if col == timestamp_col:
+            if col == timestamp_col or _normalize_column_name(col) == _normalize_column_name(timestamp_col):
                 return col
         return None
 
-    col_map = {col.lower(): col for col in columns}
+    col_map = {_normalize_column_name(col): col for col in columns}
     for candidate in _TIMESTAMP_CANDIDATES:
         if candidate in col_map:
             return col_map[candidate]
@@ -39,7 +47,7 @@ def _resolve_timestamp_column(columns: Sequence[str], timestamp_col: str | None)
 
 def _read_csv(path: Path, timestamp_col: str | None, fs: float | None) -> VibReadResult:
     frame = pd.read_csv(path)
-    col_map = {col.lower(): col for col in frame.columns}
+    col_map = {_normalize_column_name(col): col for col in frame.columns}
 
     axes: list[np.ndarray] = []
     missing_axes: list[str] = []
