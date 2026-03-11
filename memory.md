@@ -561,3 +561,15 @@
   - normalizes header variants such as `Time Stamp` -> `timestamp`
   - normalizes axis variants such as `X-axis` -> `x`
 - Added regression coverage in `tests/batch_decision/test_import_and_preprocess.py` for axis/timestamp header variants.
+
+## 32) Continuation update - 2026-03-11 (P1A Colab verification completed)
+- User executed the full batch decision path in Colab:
+  - `python3 -m batch_decision.runner --config configs/batch_decision_runtime_colab.yaml --run`: PASS
+- Full run output:
+  - `total_events=75`
+  - `decision_counts={'normal': 0, 'warn': 4, 'anomaly': 71}`
+  - exported:
+    - `artifacts/batch_decision/colab_validation/decision_report.json`
+    - `artifacts/batch_decision/colab_validation/decision_events.csv`
+    - `artifacts/batch_decision/colab_validation/chart_payload.json`
+- P1A status promoted to complete based on Colab full-run evidence.
